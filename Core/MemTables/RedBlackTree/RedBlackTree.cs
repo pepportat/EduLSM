@@ -107,7 +107,7 @@ public class RedBlackTree : IMemTable
 
         var nodes = new Dictionary<RedBlackNode, NodeSnapshot>();
         var result = new Dictionary<int, NodeSnapshot>();
-        int inOrderIndex;
+        int inOrderIndex = 0;
 
         CalculatePrelim(_root, 0);
 
@@ -253,6 +253,14 @@ public class RedBlackTree : IMemTable
 
                 return searchNode;
             }
+
+            parent = searchNode;
+            searchNode = comparison switch
+            {
+                > 0 => searchNode.Right,
+                < 0 => searchNode.Left,
+                _ => throw new Exception("Impossible")
+            };
         }
 
         var newNode = new RedBlackNode
