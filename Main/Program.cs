@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Core.MemTables.RedBlackTree;
 using Core.MemTables.RedBlackTree.VisualizerHelpers;
+using Main.Helpers;
 using Raylib_cs;
 using static Main.Helpers.StepColorHelper;
 using static Raylib_cs.Raylib;
@@ -17,29 +18,30 @@ class Program
     {
         LsmStateManager manager = new LsmStateManager();
         List<MemTableStep> steps = [];
-        //Dictionary<int, Vector2> nodeCords = [];
-        
 
         var screenWidth = 1200;
         var screenHeight = 800;
         int screenMiddleX;
-        const int yNodeSeparator = 80;
+        int currentStepIndex = 0;
         string input = "";
+        
 
-        Camera2D treeCamera = new Camera2D
+        var treeCamera = new Camera2D
         {
             Zoom = 1.0f
         };
 
-        Camera2D leftPanelCamera = new Camera2D
+        var leftPanelCamera = new Camera2D
         {
             Zoom = 1.0f
         };
 
 
-        SetConfigFlags(ConfigFlags.ResizableWindow);
+        SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint);
         InitWindow(screenWidth, screenHeight, "Edu LSM");
-
+        var font = LoadFont("./resources/Roboto-Medium.ttf");
+        SetTextureFilter(font.Texture, TextureFilter.Bilinear);
+        
         SetTargetFPS(60);
         
         while (!WindowShouldClose())
@@ -74,7 +76,7 @@ class Program
                     treeCamera.Target = mouseWorldPos;
                 
                     float scale = 0.2f*wheel;
-                    treeCamera.Zoom = Clamp((float)Math.Exp(Math.Log(treeCamera.Zoom)+scale), 0.125f, 10.0f);
+                    treeCamera.Zoom = Clamp((float)Math.Exp(Math.Log(treeCamera.Zoom)+scale), 0.5f, 10.0f);
                 }
             }
             
@@ -91,7 +93,7 @@ class Program
                         DrawGridCustom(200, 50, Color.DarkGray);
                     Rlgl.PopMatrix();
                     
-                    DrawTree();
+                    DrawTreeArea();
                     
                 EndMode2D();
 
@@ -102,6 +104,7 @@ class Program
             EndDrawing();
         }
         
+        UnloadFont(font);
         CloseWindow();
 
         return;
@@ -117,31 +120,51 @@ class Program
                 input += (char)key;
             }
         
-            if (IsKeyDown(KeyboardKey.Backspace) && (input.Length > 0))
+            if (IsKeyPressed(KeyboardKey.Backspace) && input.Length > 0)
             {
                 input = input[..^1];
             }
             
-            if (IsKeyDown(KeyboardKey.Enter) && (input.Length > 0))
+            if (IsKeyDown(KeyboardKey.Enter) && input.Length > 0)
             {
-                var (b, list) = manager.Tree.Add(int.Parse(input), $"Data for key {input}");
-                manager.UpdateLayout(yNodeSeparator, screenMiddleX, LeftPanelWidth);
+                var (_, list) = manager.Tree.Add(int.Parse(input), $"Data for key {input}");
+                steps = list;
+                currentStepIndex = 0;
+                manager.UpdateLayout(LeftPanelWidth, screenMiddleX);
                 input = "";
             }
             
-            if (IsKeyDown(KeyboardKey.S) && (input.Length > 0))
+            if (IsKeyDown(KeyboardKey.S) && input.Length > 0)
             {
-                var (b, list) = manager.Tree.Get(int.Parse(input));
+                var (_, list) = manager.Tree.Get(int.Parse(input));
                 steps = list;
+                currentStepIndex = 0;
                 input = "";
             }
             
-            if (IsKeyDown(KeyboardKey.R) && (input.Length > 0))
+            if (IsKeyDown(KeyboardKey.R) && input.Length > 0)
             {
-                var (b, list) = manager.Tree.Remove(int.Parse(input));
+                var (_, list) = manager.Tree.Remove(int.Parse(input));
                 steps = list;
-                manager.UpdateLayout(yNodeSeparator, screenMiddleX, LeftPanelWidth);
+                currentStepIndex = 0;
+                manager.UpdateLayout(LeftPanelWidth, screenMiddleX);
                 input = "";
+            }
+
+            if (IsKeyPressed(KeyboardKey.Left))
+            {
+                if (currentStepIndex > 0)
+                {
+                    currentStepIndex--;
+                }
+            }
+            
+            if (IsKeyPressed(KeyboardKey.Right))
+            {
+                if (currentStepIndex < steps.Count - 1)
+                {
+                    currentStepIndex++;
+                }
             }
         }
         
@@ -150,51 +173,73 @@ class Program
         {
             DrawRectangle(0, 0, width, screenHeight * 2, Color.Black);
             DrawRectangleLines(0, 0, width, screenHeight * 2, Color.White);
-            DrawText($"Count: {manager.Tree.Count}", 10, 10, fontSize, Color.White);
-            DrawText($"Input: {input}", 10, 10 + separatorHeight + fontSize, fontSize, Color.White);
+            DrawTextEx(font, $"Count: {manager.Tree.Count}", new(10, 10), fontSize, 2, Color.White);
+            DrawTextEx(font, $"Input: {input}", new (10, 10 + separatorHeight + fontSize), fontSize, 2, Color.White);
 
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
 
-                int y = 10 + ((i + 2) * separatorHeight) + ((i + 2) * fontSize);
+                int y = 10 + (i + 2) * separatorHeight + (i + 2) * fontSize;
                 
-                DrawText(step.Description, 10, y, fontSize, Color.White);
+                DrawTextEx(font, step.Description, new(10, y), fontSize, 2, currentStepIndex == i ? Color.White : Color.Gray);
+            }
 
-                if (step.Key.HasValue)
+
+            if (steps.Count == 0)
+            {
+                return;
+            }
+            
+            var currentStep = steps[currentStepIndex];
+            
+            if (currentStep.Key.HasValue)
+            {
+                var layout = steps[currentStepIndex].Layout;
+
+                if (layout is not null)
                 {
-                    var mousePos = GetMousePosition();                                                                                                                                                                                                
-                    var mouseWorldPos = GetScreenToWorld2D(mousePos, leftPanelCamera);
-                    
-                    if (CheckCollisionPointRec(mouseWorldPos, new Rectangle(10, y, width, fontSize + 2)))
+                    if (layout.TryGetValue(currentStep.Key.Value, out var nodeCord))
                     {
-                        var nodeCord = manager.Layout[step.Key.Value];
-
                         BeginMode2D(treeCamera);
-                            DrawRing(new Vector2((int)nodeCord.Position.X, (int)nodeCord.Position.Y), 28, 34, 0, 360, 24, GetStepNodeColor(step.Kind));
+                            DrawRing(new Vector2((int)nodeCord.Position.X, (int)nodeCord.Position.Y), 28, 34, 0, 360, 24, GetStepNodeColor(currentStep.Kind));
                         EndMode2D();
                     }
                 }
             }
         }
         
-        
-
-        
-        
-        void DrawTree()
+        void DrawTreeArea()
         {
-            foreach (var kv in manager.Layout.Where(node => node.Value.ParentKey != -1))
+            if (steps.Count == 0)
             {
-                DrawEdges(kv.Value);
+                return;
             }
 
-            foreach (var kv in manager.Layout)
+            var layout = steps[currentStepIndex].Layout;
+
+            if (layout is not null)
+            {
+                DrawTreeInternal(layout.OffsetLayout(LeftPanelWidth, screenMiddleX));
+                return;
+            }
+            
+            DrawTreeInternal(manager.Layout);
+        }
+
+        void DrawTreeInternal(Dictionary<int, NodeSnapshot> layout)
+        {
+            foreach (var kv in layout.Where(node => node.Value.ParentKey != -1))
+            {
+                DrawEdges(kv.Value, layout);
+            }
+
+            foreach (var kv in layout)
             {
                 DrawNode(kv.Value, fontSize: 20);
             }
                     
-            foreach (var kv in manager.Layout)
+            foreach (var kv in layout)
             {
                 AddOnHoverForNodes(kv.Value, fontSize: 20);
             }
@@ -204,25 +249,25 @@ class Program
         {
             var nodeColor = node.Color == NodeColor.Black ? new Color( 30, 41, 59,255) : new Color(220, 38, 38,255);
 
-            int circleX = (int)manager.Layout[node.Key].Position.X;
-            int circleY = (int)manager.Layout[node.Key].Position.Y;
+            int circleX = (int)node.Position.X;
+            int circleY = (int)node.Position.Y;
         
             DrawCircle(circleX, circleY, radius, nodeColor);
         
             int textWidth = MeasureText($"{node.Key}", fontSize);
         
-            DrawText($"{node.Key}", circleX - textWidth / 2, circleY - fontSize / 2, fontSize, Color.White);
+            DrawTextEx(font, $"{node.Key}", new(circleX - textWidth / 2f, circleY - fontSize / 2f), fontSize, 2, Color.White);
 
             if (node.IsTombstone)
             {
-                DrawText("t", circleX + 8, circleY - 20, 15, Color.White);
+                DrawTextEx(font, "t", new (circleX + 8, circleY - 20), 15, 2, Color.White);
             }
         }
         
-        void DrawEdges(NodeSnapshot node)
+        void DrawEdges(NodeSnapshot node, Dictionary<int, NodeSnapshot> layout)
         {
-            var start = manager.Layout[node.Key].Position;
-            var end = manager.Layout[node.ParentKey].Position;
+            var start = node.Position;
+            var end = layout[node.ParentKey].Position;
 
             DrawLineEx(
                 start,
@@ -234,19 +279,18 @@ class Program
         
         void AddOnHoverForNodes(NodeSnapshot node, int radius = 20, int fontSize = 10)
         {
-            int circleX = (int)manager.Layout[node.Key].Position.X;
-            int circleY = (int)manager.Layout[node.Key].Position.Y;
+            int circleX = (int)node.Position.X;
+            int circleY = (int)node.Position.Y;
                 
             var mousePos = GetMousePosition();                                                                                                                                                                                                
             var mouseWorldPos = GetScreenToWorld2D(mousePos, treeCamera);  // Convert mouse to world coords                                                                                                                                       
             if (CheckCollisionPointRec(mouseWorldPos, new Rectangle(circleX - radius, circleY - radius, radius * 2, radius * 2)))                                                                                                             
             {                                                                                                                                                                                                                                 
-                DrawCircleLines(circleX, circleY, radius, Color.White);                                                                                                                                                                       
-                DrawText($"{node.Value}", circleX + 15, circleY - 30, fontSize, Color.White);                                                                                                                                                 
+                DrawCircleLines(circleX, circleY, radius, Color.White);           
+                DrawTextEx(font, $"{node.Value}", new(circleX + 15, circleY - 30), fontSize, 2, Color.White);                                                                                                                                                
             }   
         }
     }
-
     
     private static void DrawGridCustom(int slices, float spacing, Color color)
     {
@@ -266,116 +310,4 @@ class Program
         }
         Rlgl.End();
     }
-
-    // private static Dictionary<int, Vector2> SnapshotToCords(RedBlackNode root, int yNodeSeparator, int screenMiddleX,
-    //     int leftPanelWidth)
-    // {
-    //     if (root.IsNil) return new Dictionary<int, Vector2>();
-    //
-    //     const double siblingDistance = 80.0;
-    //     double levelDistance = yNodeSeparator;
-    //
-    //     var nodes = new Dictionary<RedBlackNode, (double X, double Y)>();
-    //     var result = new Dictionary<int, Vector2>();
-    //     int inOrderIndex = 0;
-    //
-    //     CalculatePrelim(root, 0);
-    //
-    //     float offset = leftPanelWidth / 2f + screenMiddleX - (float)nodes[root].X;
-    //     foreach (var kvp in nodes)
-    //         result[kvp.Key.Key] = new Vector2((float)kvp.Value.X + offset, (float)kvp.Value.Y + yNodeSeparator);
-    //
-    //     return result;
-    //
-    //     void CalculatePrelim(RedBlackNode node, int depth)
-    //     {
-    //         if (node.IsNil) return;
-    //
-    //         nodes[node] = (0, depth * levelDistance);
-    //
-    //         CalculatePrelim(node.Left, depth + 1);
-    //
-    //         if (node.Left.IsNil && node.Right.IsNil)
-    //         {
-    //             nodes[node] = (inOrderIndex++ * siblingDistance, nodes[node].Y);
-    //             return;
-    //         }
-    //
-    //         CalculatePrelim(node.Right, depth + 1);
-    //
-    //         double x;
-    //         if (node.Left.IsNil)
-    //         {
-    //             x = nodes[node.Right].X - siblingDistance / 2.0;
-    //         }
-    //         else if (node.Right.IsNil)
-    //         {
-    //             x = nodes[node.Left].X + siblingDistance / 2.0;
-    //         }
-    //         else
-    //         {
-    //             double leftPos = nodes[node.Left].X;
-    //             double rightPos = nodes[node.Right].X;
-    //
-    //             if (rightPos - leftPos < siblingDistance)
-    //             {
-    //                 double shift = siblingDistance - (rightPos - leftPos);
-    //                 ShiftSubtree(node.Right, shift);
-    //                 rightPos += shift;
-    //             }
-    //
-    //             // Check deeper levels for overlap
-    //             double minGap = GetContourMinGap(node.Left, node.Right);
-    //             if (minGap < siblingDistance)
-    //             {
-    //                 double shift = siblingDistance - minGap;
-    //                 ShiftSubtree(node.Right, shift);
-    //                 rightPos += shift;
-    //             }
-    //
-    //             x = (leftPos + rightPos) / 2.0;
-    //         }
-    //
-    //         nodes[node] = (x, nodes[node].Y);
-    //     }
-    //
-    //     void ShiftSubtree(RedBlackNode node, double shift)
-    //     {
-    //         var stack = new Stack<RedBlackNode>();
-    //         stack.Push(node);
-    //         while (stack.Count > 0)
-    //         {
-    //             var current = stack.Pop();
-    //             if (current.IsNil) continue;
-    //             nodes[current] = (nodes[current].X + shift, nodes[current].Y);
-    //             stack.Push(current.Left);
-    //             stack.Push(current.Right);
-    //         }
-    //     }
-    //
-    //     double GetContourMinGap(RedBlackNode left, RedBlackNode right)
-    //     {
-    //         double minGap = double.MaxValue;
-    //         var leftLevel = new List<RedBlackNode> { left };
-    //         var rightLevel = new List<RedBlackNode> { right };
-    //
-    //         while (leftLevel.Count > 0 && rightLevel.Count > 0)
-    //         {
-    //             var leftNodes = leftLevel.Where(n => !n.IsNil).ToList();
-    //             var rightNodes = rightLevel.Where(n => !n.IsNil).ToList();
-    //
-    //             if (leftNodes.Count == 0 || rightNodes.Count == 0) break;
-    //
-    //             double leftMax = leftNodes.Max(n => nodes[n].X);
-    //             double rightMin = rightNodes.Min(n => nodes[n].X);
-    //             double gap = rightMin - leftMax;
-    //             if (gap < minGap) minGap = gap;
-    //
-    //             leftLevel = leftNodes.SelectMany(n => new[] { n.Left, n.Right }).ToList();
-    //             rightLevel = rightNodes.SelectMany(n => new[] { n.Left, n.Right }).ToList();
-    //         }
-    //
-    //         return minGap == double.MaxValue ? siblingDistance : minGap;
-    //     }
-    // }
 }
