@@ -231,8 +231,8 @@ public class RedBlackTree : IMemTable
                 //Was deleted previously, so we need to update the item
                 if (searchNode.IsTombstone)
                 {
-                    steps.Add(new MemTableStep(StepKind.InsertDuplicateUpdate, $"[{key}] tombstone cleared", key, GetLayout()));
                     searchNode.IsTombstone = false;
+                    steps.Add(new MemTableStep(StepKind.InsertDuplicateUpdate, $"[{key}] tombstone cleared", key, GetLayout()));
                     Count++;
                 }
                 else
