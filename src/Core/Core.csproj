@@ -5,10 +5,4 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
-    <ItemGroup>
-      <Folder Include="Entity\" />
-      <Folder Include="SSTables\" />
-    </ItemGroup>
-
 </Project>

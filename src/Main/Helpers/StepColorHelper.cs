@@ -7,29 +7,29 @@ public static class StepColorHelper
 {
     public static Color GetStepNodeColor(StepKind stepKind)
     {
-        return stepKind switch {
-            StepKind.SearchStart => Color.White,
-            StepKind.SearchCompare => Color.Blue,
-            StepKind.SearchHit => Color.Green,
-            StepKind.SearchMiss => Color.Green,
-            StepKind.InsertStart => Color.DarkGray,
-            StepKind.InsertTraverse => Color.Brown,
-            StepKind.InsertAttach => Color.DarkBrown,
-            StepKind.DeleteTombstone => Color.Pink,
+        return stepKind switch
+        {
+            StepKind.SearchStart    => new(20,  184, 166, 255),   // teal-500
+            StepKind.SearchCompare  => new(94,  234, 212, 255),   // teal-300
+            StepKind.SearchHit      => new(52,  211, 153, 255),   // emerald-400
+            StepKind.SearchMiss     => new(148, 163, 184, 255),   // slate-400
             
-            _ => Color.Gold //TODO: add other colors
-            // StepKind.InsertDuplicateUpdate => expr,
-            // StepKind.InsertColour => expr,
-            // StepKind.DeleteStart => expr,
-            // 
-            // StepKind.DeleteAlreadyTombstoned => expr,
-            // StepKind.DeleteNotFound => expr,
-            // StepKind.FixupStart => expr,
-            // StepKind.FixupCase => expr,
-            // StepKind.Recolour => expr,
-            // StepKind.Rotation => expr,
-            // StepKind.MoveUp => expr,
-            // StepKind.FixupDone => expr,
+            StepKind.InsertStart            => new(245, 158, 11,  255),  // amber-500
+            StepKind.InsertTraverse         => new(253, 211, 77,  255),  // amber-300
+            StepKind.InsertAttach           => new(251, 191, 36,  255),  // amber-400
+            StepKind.InsertDuplicateUpdate  => new(249, 115, 22,  255),  // orange-500
+            
+            StepKind.DeleteStart            => new(244, 114, 182, 255),  // pink-400
+            StepKind.DeleteTombstone        => new(190, 18,  60,  255),  // rose-800
+            StepKind.DeleteAlreadyTombstoned=> new(100, 116, 139, 255),  // slate-500
+            StepKind.DeleteNotFound         => new(100, 116, 139, 255),  // slate-500
+            
+            StepKind.FixupCase  => new(129, 140, 248, 255),   // indigo-400
+
+            StepKind.Rotation   => new(34,  211, 238, 255),   // cyan-400
+            StepKind.Recolour   => new(192, 132, 252, 255),   // purple-400
+
+            _ => new(148, 163, 184, 255),
         };
     }
 }

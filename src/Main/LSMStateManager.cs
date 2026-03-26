@@ -1,6 +1,7 @@
 using Core.MemTables;
 using Core.MemTables.RedBlackTree;
 using Core.MemTables.RedBlackTree.VisualizerHelpers;
+using Main.Helpers;
 
 namespace Main;
 
@@ -9,15 +10,15 @@ public sealed class LsmStateManager
     public LsmStateManager()
     {
         Tree = new RedBlackTree();
-        Layout = Tree.GetLayout(0,0, 0);
+        Layout = Tree.GetLayout();
     }
 
     public IMemTable Tree { get; set;}
-    public Dictionary<int, NodeSnapshot> Layout { get; set; }
+    public Dictionary<int, NodeSnapshot> Layout { get; private set; }
     
-    public void UpdateLayout(int yNodeSeparator, int screenMiddleX, int leftPanelWidth)
+    public void UpdateLayout(int leftPanelWidth, int screenMiddleX)
     {
-        Layout = Tree.GetLayout(yNodeSeparator, screenMiddleX, leftPanelWidth);
+        var rawLayout = Tree.GetLayout();
+        Layout = rawLayout.OffsetLayout(leftPanelWidth, screenMiddleX);
     }
-    
 }
