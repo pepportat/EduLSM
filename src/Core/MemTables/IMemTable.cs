@@ -9,6 +9,5 @@ public interface IMemTable
     (bool result, List<MemTableStep> steps) Remove(int key);
     (string? value, List<MemTableStep> steps) Get(int key);
     IEnumerable<(int key, string value)> GetSorted();
-    //public List<NodeSnapshot> GetTreeSnapsShot();
-    Dictionary<int, NodeSnapshot> GetLayout(int yNodeSeparator, int screenMiddleX, int leftPanelWidth);
+    Dictionary<int, NodeSnapshot> GetLayout();
 }
