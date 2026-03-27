@@ -373,7 +373,7 @@ public class RedBlackTree : IMemTable
             }
         }
         _root.Color = NodeColor.Black;
-        steps.Add(new MemTableStep(StepKind.Recolour, $"Recolour root:-> BLACK", _root.Key, GetLayout()));
+        steps.Add(new MemTableStep(StepKind.Recolour, "Recolour root:-> BLACK", _root.Key, GetLayout()));
     }
     
     private void RotateLeft(RedBlackNode node, List<MemTableStep> steps)

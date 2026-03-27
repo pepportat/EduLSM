@@ -94,12 +94,18 @@ class Program
                     Rlgl.PopMatrix();
                     
                     DrawTreeArea();
-                    
                 EndMode2D();
 
                 BeginMode2D(leftPanelCamera);
                     DrawLeftPanel(LeftPanelWidth, 20, 4);
                 EndMode2D();
+
+                if (steps.Count > 0)
+                {
+                    DrawTextEx(font, steps[currentStepIndex].Description, new Vector2(LeftPanelWidth + 10, 10), 20, 2, Color.White);
+                }
+                
+                DrawTextEx(font, "LB - Pan | MW - Zoom | Enter - Insert | R - Remove | S - Search | </> - previous/next step", new Vector2(LeftPanelWidth + 10, screenHeight - 28), 18, 2, Color.Gray);
             
             EndDrawing();
         }
@@ -171,6 +177,8 @@ class Program
         
         void DrawLeftPanel(int width, int fontSize = 16, int separatorHeight = 2)
         {
+            BeginScissorMode(0, 0, width, screenHeight * 2);
+            
             DrawRectangle(0, 0, width, screenHeight * 2, Color.Black);
             DrawRectangleLines(0, 0, width, screenHeight * 2, Color.White);
             DrawTextEx(font, $"Count: {manager.Tree.Count}", new(10, 10), fontSize, 2, Color.White);
@@ -185,7 +193,8 @@ class Program
                 DrawTextEx(font, step.Description, new(10, y), fontSize, 2, currentStepIndex == i ? Color.White : Color.Gray);
             }
 
-
+            EndScissorMode();
+            
             if (steps.Count == 0)
             {
                 return;
@@ -254,7 +263,7 @@ class Program
         
             DrawCircle(circleX, circleY, radius, nodeColor);
         
-            int textWidth = MeasureText($"{node.Key}", fontSize);
+            var textWidth = MeasureTextEx(font, $"{node.Key}", fontSize, 2).X;
         
             DrawTextEx(font, $"{node.Key}", new(circleX - textWidth / 2f, circleY - fontSize / 2f), fontSize, 2, Color.White);
 
