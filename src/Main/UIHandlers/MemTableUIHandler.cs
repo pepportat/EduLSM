@@ -12,12 +12,12 @@ namespace Main.UIHandlers;
 
 public partial class LsmEngine
 {
-    public Camera2D TreeCamera = new()
+    private Camera2D _treeCamera = new()
     {
         Zoom = 1.0f
     };
 
-    public Camera2D LeftPanelCamera = new()
+    private Camera2D _leftPanelCamera = new()
     {
         Zoom = 1.0f
     };
@@ -29,8 +29,8 @@ public partial class LsmEngine
         {
             Vector2 delta = GetMouseDelta();
 
-            delta = Vector2Scale(delta, -1.0f / TreeCamera.Zoom);
-            TreeCamera.Target = Vector2Add(TreeCamera.Target, delta);
+            delta = Vector2Scale(delta, -1.0f / _treeCamera.Zoom);
+            _treeCamera.Target = Vector2Add(_treeCamera.Target, delta);
         }
 
         float wheel = GetMouseWheelMove();
@@ -39,26 +39,26 @@ public partial class LsmEngine
             if (CheckCollisionPointRec(GetMousePosition(),
                     new Rectangle(0, 0, UIState.LeftPanelWidth, UiState.ScreenHeight)))
             {
-                LeftPanelCamera.Offset.Y += wheel * 20;
+                _leftPanelCamera.Offset.Y += wheel * 20;
 
-                LeftPanelCamera.Offset.Y = Clamp(LeftPanelCamera.Offset.Y, -UiState.ScreenHeight, 0);
+                _leftPanelCamera.Offset.Y = Clamp(_leftPanelCamera.Offset.Y, -UiState.ScreenHeight, 0);
             }
             else
             {
-                var mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), TreeCamera);
+                var mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), _treeCamera);
 
-                TreeCamera.Offset = GetMousePosition();
+                _treeCamera.Offset = GetMousePosition();
 
-                TreeCamera.Target = mouseWorldPos;
+                _treeCamera.Target = mouseWorldPos;
 
                 var scale = 0.2f * wheel;
-                TreeCamera.Zoom = Clamp((float)Math.Exp(Math.Log(TreeCamera.Zoom) + scale), 0.1f, 10.0f);
+                _treeCamera.Zoom = Clamp((float)Math.Exp(Math.Log(_treeCamera.Zoom) + scale), 0.1f, 10.0f);
             }
         }
 
         HandleMemTableInput();
 
-        BeginMode2D(TreeCamera);
+        BeginMode2D(_treeCamera);
             Rlgl.PushMatrix();
                 Rlgl.Translatef(1000, 2600, 0);
                 Rlgl.Rotatef(90, 1, 0, 0);
@@ -68,7 +68,7 @@ public partial class LsmEngine
             DrawTreeArea();
         EndMode2D();
 
-        BeginMode2D(LeftPanelCamera);
+        BeginMode2D(_leftPanelCamera);
             DrawLeftPanel(UIState.LeftPanelWidth, 20, 4);
         EndMode2D();
 
@@ -141,7 +141,7 @@ public partial class LsmEngine
         }
     }
 
-    void DrawLeftPanel(int width, int fontSize = 16, int separatorHeight = 2)
+    private void DrawLeftPanel(int width, int fontSize = 16, int separatorHeight = 2)
     {
         BeginScissorMode(0, 0, width, UiState.ScreenHeight * 2);
 
@@ -173,7 +173,7 @@ public partial class LsmEngine
                 {
                     if (layout.TryGetValue(currentStep.Key.Value, out var nodeCord))
                     {
-                        BeginMode2D(TreeCamera);
+                        BeginMode2D(_treeCamera);
                         DrawRing(new Vector2((int)nodeCord.Position.X, (int)nodeCord.Position.Y), 28, 34, 0, 360, 24,
                             GetStepNodeColor(currentStep.Kind));
                         EndMode2D();
@@ -183,7 +183,7 @@ public partial class LsmEngine
         }
     }
 
-    void DrawTreeArea()
+    private void DrawTreeArea()
     {
         if (TryGetCurrentStep(out var currentStep))
         {
@@ -199,7 +199,7 @@ public partial class LsmEngine
         DrawTreeInternal(Layout);
     }
 
-    void DrawTreeInternal(Dictionary<int, NodeSnapshot> layout)
+    private void DrawTreeInternal(Dictionary<int, NodeSnapshot> layout)
     {
         foreach (var kv in layout.Where(node => node.Value.ParentKey != -1))
         {
@@ -217,7 +217,7 @@ public partial class LsmEngine
         }
     }
 
-    void DrawNode(NodeSnapshot node, int radius = 20, int fontSize = 10)
+    private void DrawNode(NodeSnapshot node, int radius = 20, int fontSize = 10)
     {
         var nodeColor = node.Color == NodeColor.Black ? new Color(30, 41, 59, 255) : new Color(220, 38, 38, 255);
 
@@ -237,7 +237,7 @@ public partial class LsmEngine
         }
     }
 
-    void DrawEdges(NodeSnapshot node, Dictionary<int, NodeSnapshot> layout)
+    private void DrawEdges(NodeSnapshot node, Dictionary<int, NodeSnapshot> layout)
     {
         var start = node.Position;
         var end = layout[node.ParentKey].Position;
@@ -250,13 +250,13 @@ public partial class LsmEngine
         );
     }
 
-    void AddOnHoverForNodes(NodeSnapshot node, int radius = 20, int fontSize = 10)
+    private void AddOnHoverForNodes(NodeSnapshot node, int radius = 20, int fontSize = 10)
     {
         int circleX = (int)node.Position.X;
         int circleY = (int)node.Position.Y;
 
         var mousePos = GetMousePosition();
-        var mouseWorldPos = GetScreenToWorld2D(mousePos, TreeCamera); // Convert mouse to world coords                                                                                                                                       
+        var mouseWorldPos = GetScreenToWorld2D(mousePos, _treeCamera); // Convert mouse to world coords                                                                                                                                       
         if (CheckCollisionPointRec(mouseWorldPos, new Rectangle(circleX - radius, circleY - radius, radius * 2, radius * 2)))
         {
             DrawCircleLines(circleX, circleY, radius, Color.White);

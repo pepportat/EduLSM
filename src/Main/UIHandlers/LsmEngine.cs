@@ -3,7 +3,6 @@ using Core.MemTables.RedBlackTree;
 using Core.MemTables.RedBlackTree.VisualizerHelpers;
 using Main.Helpers;
 using Raylib_cs;
-using static Raylib_cs.Raylib;
 
 namespace Main.UIHandlers;
 
