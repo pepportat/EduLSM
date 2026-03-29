@@ -15,7 +15,6 @@ public static class FileReader
     {
         var sortedStringTable = new List<(int key, string value, bool isTombstoned)>();
 
-        // TODO: when to stop?
         while (reader.BaseStream.Position < stopOffset)
         {
             var key = reader.ReadInt32();
