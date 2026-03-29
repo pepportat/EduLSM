@@ -5,6 +5,13 @@ namespace Core.SSTables.IoHelpers;
 
 public static class BloomFilterBuilder
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="keys"></param>
+    /// <param name="expectedItems"></param>
+    /// <param name="falsePositiveRate"></param>
+    /// <returns></returns>
     public static BloomFilter Create(IEnumerable<int> keys, int expectedItems, double falsePositiveRate = 0.01)
     {
         var size = OptimalBitCount(expectedItems, falsePositiveRate);
@@ -13,7 +20,7 @@ public static class BloomFilterBuilder
 
         foreach (var key in keys)
             Add(bits, hashCount, size, key);
-        return new  BloomFilter(bits, hashCount);
+        return new  BloomFilter(bits, hashCount, size);
     }
     
     /// <summary>
@@ -39,7 +46,7 @@ public static class BloomFilterBuilder
         var hashCount = BitConverter.ToInt32(bytes, 4);
         var bitBytes = bytes[8..];
         var bits = new BitArray(bitBytes) { Length = size };
-        return new BloomFilter(bits, hashCount);
+        return new BloomFilter(bits, hashCount, size);
     }
 
 
@@ -73,7 +80,9 @@ public static class BloomFilterBuilder
     private static void Add(BitArray bits, int hashCount, int size, int key)
     {
         foreach (int pos in BloomFilterHashing.GetPositions(key, hashCount, size))
+        {
             bits[pos] = true;
+        }
     }
 
     #endregion
