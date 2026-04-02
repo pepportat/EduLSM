@@ -1,4 +1,5 @@
 using System.Numerics;
+using Core.Common;
 using Core.MemTables.RedBlackTree.VisualizerHelpers;
 
 namespace Core.MemTables.RedBlackTree;
@@ -82,9 +83,9 @@ public class RedBlackTree : IMemTable
         return (null, steps);
     }
 
-    public IEnumerable<(int, string)> GetSorted()
+    public IEnumerable<Kvp> GetSorted()
     {
-        var sortedList = new List<(int, string)>(capacity: Count);
+        var sortedList = new List<Kvp>(capacity: Count);
 
         InOrder(_root, sortedList);
 
@@ -289,7 +290,7 @@ public class RedBlackTree : IMemTable
         Count++;
     }
     
-    private void InOrder(RedBlackNode node, List<(int, string)> list)
+    private void InOrder(RedBlackNode node, List<Kvp> list)
     {
         if (IsNil(node))
         {
@@ -297,11 +298,8 @@ public class RedBlackTree : IMemTable
         }
         
         InOrder(node.Left, list);
-
-        if (!node.IsTombstone)
-        {
-            list.Add((node.Key, node.Value));
-        }
+        
+        list.Add(new Kvp(node.Key, node.Value, node.IsTombstone));
         
         InOrder(node.Right, list);
     }
