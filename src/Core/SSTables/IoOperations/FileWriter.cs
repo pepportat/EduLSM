@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Core.Common;
 using Core.SSTables.IoHelpers;
 using Core.SSTables.Structure;
 
@@ -6,29 +7,30 @@ namespace Core.SSTables.IoOperations;
 
 public static class FileWriter
 {
+    // TODO: Move sparseindex building to a separate method? this is more optimal, we have to guess the offsets
     /// <summary>
     /// Writes the memtable to file
     /// </summary>
     /// <param name="writer">BinaryWriter object</param>
     /// <param name="memTable">Key-value structure to be written to the file</param>
     /// <returns>The sparse index for the memtable</returns>
-    public static IEnumerable<(int, long)> WriteDataBlock(BinaryWriter writer,
-        IEnumerable<(int key, string value, bool isTombstoned)> memTable)
+    public static IEnumerable<SparseIndexEntries> WriteDataBlock(BinaryWriter writer,
+        IEnumerable<Kvp> memTable)
     {
         var chunks = memTable.Chunk(10);
-        var sparseIndex = new List<(int, long)>();
+        var sparseIndex = new List<SparseIndexEntries>();
         foreach (var chunk in chunks)
         {
             var currentOffset = writer.BaseStream.Position;
-            var firstKey = chunk[0].key;
+            var firstKey = chunk[0].Key;
 
-            sparseIndex.Add((firstKey, currentOffset));
+            sparseIndex.Add(new SparseIndexEntries(firstKey, currentOffset));
 
             for (int i = 0; i < chunk.Length; ++i)
             {
-                writer.Write(chunk[i].key);
-                writer.Write(chunk[i].value);
-                writer.Write(chunk[i].isTombstoned);
+                writer.Write(chunk[i].Key);
+                writer.Write(chunk[i].Value);
+                writer.Write(chunk[i].IsTombStoned);
             }
         }
 
@@ -40,7 +42,7 @@ public static class FileWriter
     /// </summary>
     /// <param name="writer">BinaryWriter object</param>
     /// <param name="sparseIndex">Sparse index to be written to the file</param>
-    public static void WriteSparseIndex(BinaryWriter writer, IEnumerable<(int, long)> sparseIndex)
+    public static void WriteSparseIndex(BinaryWriter writer, IEnumerable<SparseIndexEntries> sparseIndex)
     {
         foreach (var (key, offset) in sparseIndex)
         {
@@ -54,14 +56,11 @@ public static class FileWriter
     /// </summary>
     /// <param name="writer">BinaryWriter object</param>
     /// <param name="bloomFilter">BloomFilter to be written</param>
-    /// <returns>Number of bytes written in file</returns>
-    public static int WriteBloomFilter(BinaryWriter writer, BloomFilter bloomFilter)
+    public static void WriteBloomFilter(BinaryWriter writer, BloomFilter bloomFilter)
     {
         var bytes = BloomFilterBuilder.Serialize(bloomFilter);
 
         writer.Write(bytes);
-
-        return bytes.Length;
     }
 
     /// <summary>
