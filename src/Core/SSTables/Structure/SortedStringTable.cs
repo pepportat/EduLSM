@@ -1,4 +1,6 @@
-﻿namespace Core.SSTables.Structure;
+﻿using Core.Common;
+
+namespace Core.SSTables.Structure;
 
 public class SortedStringTable
 {
@@ -8,5 +10,3 @@ public class SortedStringTable
     IEnumerable<Kvp> KvpList { get; }
     
 }
-
-public record Kvp(int Key, string Value, bool IsTombStoned);

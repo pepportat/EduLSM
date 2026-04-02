@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Core.Common;
 
 namespace Core.SSTables.Structure;
 
@@ -6,14 +7,38 @@ public class SparseIndex(IEnumerable<SparseIndexEntries> entries)
 {
     public IEnumerable<SparseIndexEntries> KeyOffsetPairs { get; set; } = entries;
 
-    public (long start, long end) FindPossibleOffset(int searchKey)
+    /// <summary>
+    /// Finds the offset range where the searchKey might exist
+    /// </summary>
+    /// <param name="searchKey">Key to be searched</param>
+    /// <returns>A pair of offsets indicating the start and end of the Datablock where the key could exist</returns>
+    public (long start, long end) FindPossibleOffsetRange(int searchKey)
     {
         var start = KeyOffsetPairs.Where(x => x.Key <= searchKey).Max(x => x.Offset);
-        var end =  KeyOffsetPairs.Where(x => x.Key >= searchKey).Min(x => x.Offset);
+        var end =  KeyOffsetPairs.Where(x => x.Key > searchKey).Min(x => x.Offset);
         
         return (start, end);
     }
 
+    /// <summary>
+    /// Checks if the searchKey falls in the keyRange of the SparseIndex
+    /// </summary>
+    /// <param name="searchKey">Key to search</param>
+    /// <returns>A boolean value depending on if the key is in the key range or not</returns>
+    public bool MightContain(int searchKey)
+    {
+        if (searchKey < KeyOffsetPairs.First().Key)
+        {
+            return false;
+        }
+        
+        if (searchKey > KeyOffsetPairs.Last().Key)
+        {
+            return false;
+        }
+        
+        return true;
+    }
     public override string ToString()
     {
         var sb = new StringBuilder("");
@@ -27,5 +52,3 @@ public class SparseIndex(IEnumerable<SparseIndexEntries> entries)
         return sb.ToString();
     }
 }
-
-public record SparseIndexEntries(int Key, long Offset);
