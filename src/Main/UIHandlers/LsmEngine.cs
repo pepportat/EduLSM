@@ -22,13 +22,6 @@ public partial class LsmEngine
         Steps = [];
     }
 
-    public void Insert(int key, string value)
-    {
-        var (_, list) = Tree.Add(key, $"Data for key {value}");
-        Steps = list;
-        UpdateLayout(UIState.LeftPanelWidth, UiState.ScreenMiddleX);
-    }
-
     private bool TryGetCurrentStep(out MemTableStep step)
     {
         if (Steps.Count != 0)
@@ -41,9 +34,8 @@ public partial class LsmEngine
         return false;
     }
 
-    private void UpdateLayout(int leftPanelWidth, int screenMiddleX)
+    private void UpdateLayout()
     {
-        var rawLayout = Tree.GetLayout();
-        Layout = rawLayout.OffsetLayout(leftPanelWidth, screenMiddleX);
+        Layout = Tree.GetLayout();
     }
 }
