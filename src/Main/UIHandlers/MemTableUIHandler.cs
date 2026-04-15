@@ -103,7 +103,7 @@ public partial class LsmEngine
             var (_, list) = Tree.Add(int.Parse(UiState.Input), $"Data for key {UiState.Input}");
             Steps = list;
             UiState.CurrentStepIndex = 0;
-            UpdateLayout(UIState.LeftPanelWidth, UiState.ScreenMiddleX);
+            UpdateLayout();
             UiState.Input = "";
         }
             
@@ -120,7 +120,7 @@ public partial class LsmEngine
             var (_, list) = Tree.Remove(int.Parse(UiState.Input));
             Steps = list;
             UiState.CurrentStepIndex = 0;
-            UpdateLayout(UIState.LeftPanelWidth, UiState.ScreenMiddleX);
+            UpdateLayout();
             UiState.Input = "";
         }
 
@@ -165,19 +165,16 @@ public partial class LsmEngine
 
         if (TryGetCurrentStep(out var currentStep))
         {
-            if (currentStep.Key.HasValue)
+            if (currentStep is { Key: not null, Layout: not null })
             {
-                var layout = currentStep.Layout;
-
-                if (layout is not null)
+                var layout = currentStep.Layout!.OffsetLayout(UIState.LeftPanelWidth, UiState.ScreenMiddleX);
+                
+                if (layout.TryGetValue(currentStep.Key.Value, out var nodeCord))
                 {
-                    if (layout.TryGetValue(currentStep.Key.Value, out var nodeCord))
-                    {
-                        BeginMode2D(_treeCamera);
-                        DrawRing(new Vector2((int)nodeCord.Position.X, (int)nodeCord.Position.Y), 28, 34, 0, 360, 24,
-                            GetStepNodeColor(currentStep.Kind));
-                        EndMode2D();
-                    }
+                    BeginMode2D(_treeCamera);
+                    DrawRing(new Vector2((int)nodeCord.Position.X, (int)nodeCord.Position.Y), 28, 34, 0, 360, 24,
+                        GetStepNodeColor(currentStep.Kind));
+                    EndMode2D();
                 }
             }
         }

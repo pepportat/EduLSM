@@ -96,125 +96,69 @@ public class RedBlackTree : IMemTable
     {
         if (_root.IsNil) return new Dictionary<int, NodeSnapshot>();
 
-        const double siblingDistance = 80.0;
-        const int levelDistance = 80;
+        const float siblingDistance = 30f;
+        const float levelDistance = 80f;
 
-        var nodes = new Dictionary<RedBlackNode, NodeSnapshot>();
+        var xPos = new Dictionary<RedBlackNode, float>();
+        var depths = new Dictionary<RedBlackNode, int>();
         var result = new Dictionary<int, NodeSnapshot>();
-        int inOrderIndex = 0;
+        int index = 0;
 
-        CalculatePrelim(_root, 0);
-        
-        foreach (var kvp in nodes)
+        AssignX(_root, 0);
+        CenterParents(_root);
+
+        float rootX = xPos[_root];
+        foreach (var kvp in xPos)
         {
-            result[kvp.Key.Key] = kvp.Value with
-            {
-                Key = kvp.Key.Key, 
-                Position = kvp.Value.Position with { Y = kvp.Value.Position.Y + levelDistance }
-            };
-        }
-        return result;
-
-        void CalculatePrelim(RedBlackNode node, int depth)
-        {
-            if (node.IsNil) return;
-
-            nodes[node] = new NodeSnapshot(
+            var node = kvp.Key;
+            result[node.Key] = new NodeSnapshot(
                 node.Key,
                 node.Value,
                 node.Color,
-                new Vector2(0, depth * (float)levelDistance),
+                new Vector2(kvp.Value - rootX, (depths[node] + 1) * levelDistance),
                 node.IsTombstone,
                 node.Parent.Key
             );
+        }
 
-            CalculatePrelim(node.Left, depth + 1);
+        return result;
+
+        void AssignX(RedBlackNode node, int depth)
+        {
+            while (true)
+            {
+                if (node.IsNil) return;
+                depths[node] = depth;
+                AssignX(node.Left, depth + 1);
+                xPos[node] = index++ * siblingDistance;
+                node = node.Right;
+                depth = depth + 1;
+            }
+        }
+
+        void CenterParents(RedBlackNode node)
+        {
+            if (node.IsNil) return;
+            CenterParents(node.Left);
+            CenterParents(node.Right);
 
             if (node.Left.IsNil && node.Right.IsNil)
             {
-                var pos = new Vector2(inOrderIndex++ * (float)siblingDistance, nodes[node].Position.Y);
-                nodes[node] = new NodeSnapshot(node.Key, node.Value, node.Color, pos, node.IsTombstone, node.Parent.Key);
                 return;
             }
 
-            CalculatePrelim(node.Right, depth + 1);
-
-            double x;
             if (node.Left.IsNil)
             {
-                x = nodes[node.Right].Position.X - siblingDistance / 2.0;
+                xPos[node] = xPos[node.Right] - siblingDistance / 2f;
             }
             else if (node.Right.IsNil)
             {
-                x = nodes[node.Left].Position.X + siblingDistance / 2.0;
+                xPos[node] = xPos[node.Left] + siblingDistance / 2f;
             }
             else
             {
-                double leftPos = nodes[node.Left].Position.X;
-                double rightPos = nodes[node.Right].Position.X;
-
-                if (rightPos - leftPos < siblingDistance)
-                {
-                    double shift = siblingDistance - (rightPos - leftPos);
-                    ShiftSubtree(node.Right, shift);
-                    rightPos += shift;
-                }
-
-                // Check deeper levels for overlap
-                double minGap = GetContourMinGap(node.Left, node.Right);
-                if (minGap < siblingDistance)
-                {
-                    double shift = siblingDistance - minGap;
-                    ShiftSubtree(node.Right, shift);
-                    rightPos += shift;
-                }
-
-                x = (leftPos + rightPos) / 2.0;
+                xPos[node] = (xPos[node.Left] + xPos[node.Right]) / 2f;
             }
-            
-            nodes[node] = new NodeSnapshot(node.Key, node.Value, node.Color, new Vector2((float)x, nodes[node].Position.Y), node.IsTombstone, node.Parent.Key);
-        }
-
-        void ShiftSubtree(RedBlackNode node, double shift)
-        {
-            var stack = new Stack<RedBlackNode>();
-            stack.Push(node);
-            while (stack.Count > 0)
-            {
-                var current = stack.Pop();
-                if (current.IsNil) continue;
-
-                // was nodes[node] — should be nodes[current]
-                nodes[current] = nodes[current] with { Position = new Vector2((float)(nodes[current].Position.X + shift), nodes[current].Position.Y) };
-
-                stack.Push(current.Left);
-                stack.Push(current.Right);
-            }
-        }
-
-        double GetContourMinGap(RedBlackNode left, RedBlackNode right)
-        {
-            double minGap = double.MaxValue;
-            var leftLevel = new List<RedBlackNode> { left };
-            var rightLevel = new List<RedBlackNode> { right };
-
-            while (leftLevel.Count > 0 && rightLevel.Count > 0)
-            {
-                var leftNodes = leftLevel.Where(n => !n.IsNil).ToList();
-                var rightNodes = rightLevel.Where(n => !n.IsNil).ToList();
-
-                if (leftNodes.Count == 0 || rightNodes.Count == 0) break;
-
-                double leftMax = leftNodes.Max(n => nodes[n].Position.X);
-                double rightMin = rightNodes.Min(n => nodes[n].Position.X);
-                double gap = rightMin - leftMax;
-                if (gap < minGap) minGap = gap;
-
-                leftLevel = leftNodes.SelectMany(n => new[] { n.Left, n.Right }).ToList();
-                rightLevel = rightNodes.SelectMany(n => new[] { n.Left, n.Right }).ToList();
-            }
-
-            return Math.Abs(minGap - double.MaxValue) < 0.00000001f ? siblingDistance : minGap;
         }
     }
     
