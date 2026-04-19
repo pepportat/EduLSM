@@ -13,7 +13,11 @@ public static class ReadAllSsTables
         {
             using (var stream = File.OpenRead(file))
             {
-                var table = new SsTable();
+                var table = new SsTable
+                {
+                    FileName = Path.GetFileName(file)
+                };
+
                 using var reader = new BinaryReader(stream);
 
                 var footer = FileReader.ReadFooter(reader);

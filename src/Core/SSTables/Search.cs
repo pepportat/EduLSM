@@ -12,49 +12,74 @@ public static class Search
     /// </summary>
     /// <param name="key">Search key</param>
     /// <param name="directoryPath">Directory paths</param>
-    public static IEnumerable<Kvp?> SearchKey(int key, string directoryPath)
+    public static IEnumerable<SearchResult> SearchKey(int key, string directoryPath)
     {
         var filePaths = Directory.GetFiles(directoryPath);
         int numberOfFiles = filePaths.Length;
-        var kvps = new List<Kvp?>();
+        var results = new List<SearchResult>();
 
+        if (numberOfFiles == 0)
+        {
+            return results;
+        }
+        
         for (int i = 0; i < numberOfFiles; i++)
         {
-            using (var stream = File.OpenRead(filePaths[i]))
+            var result = new SearchResult(filePaths[i]);
+            
+            using var stream = File.OpenRead(filePaths[i]);
+            using var reader = new BinaryReader(stream);
+            
+            var footer = FileReader.ReadFooter(reader);
+
+            reader.BaseStream.Position = footer.BloomFilterOffset;
+
+            var bloomFilter = FileReader.ReadBloomFilter(reader);
+            
+            var bfMightContain = bloomFilter.MightContain(key);
+
+            if (!bfMightContain)
             {
-                using (var reader = new BinaryReader(stream))
-                {
-                    var footer = FileReader.ReadFooter(reader);
-
-                    reader.BaseStream.Position = footer.BloomFilterOffset;
-
-                    var bloomFilter = FileReader.ReadBloomFilter(reader);
-
-                    var bfMightContain = bloomFilter.MightContain(key);
-
-                    if (!bfMightContain)
-                    {
-                        continue;
-                    }
-
-                    reader.BaseStream.Position = footer.SparseIndexOffset;
-                    var sparseIndex = FileReader.ReadSparseIndex(reader, footer.BloomFilterOffset);
-
-                    var siMightContain = sparseIndex.MightContain(key);
-                    if (!siMightContain)
-                    {
-                        continue;
-                    }
-
-                    var offsetRange = sparseIndex.FindPossibleOffsetRange(key);
-                    reader.BaseStream.Position = offsetRange.start;
-                    var dataBlocks = FileReader.ReadDataBlock(reader, offsetRange.end);
-
-                    kvps.Add(dataBlocks.FirstOrDefault(kvp => kvp.Key == key));
-                }
+                results.Add(result);
+                continue;
             }
+            result.FoundInBloomFilter = true;
+            
+            reader.BaseStream.Position = footer.SparseIndexOffset;
+            var sparseIndex = FileReader.ReadSparseIndex(reader, footer.BloomFilterOffset);
+
+            var siMightContain = sparseIndex.MightContain(key);
+            if (!siMightContain)
+            {
+                results.Add(result);
+                continue;
+            }
+            
+            var offsetRange = sparseIndex.FindPossibleOffsetRange(key);
+            reader.BaseStream.Position = offsetRange.start;
+            var dataBlocks = FileReader.ReadDataBlock(reader, offsetRange.end).ToList();
+
+            result.FoundInSparseIndex = true;
+            result.SparseIndexKey = dataBlocks.First().Key;
+            
+            result.KeyValuePair = dataBlocks.FirstOrDefault(kvp => kvp.Key == key);
+            results.Add(result);
         }
 
-        return kvps;
+        return results;
+    }
+}
+
+public class SearchResult
+{
+    public string FileName { get; set; }
+    public bool FoundInBloomFilter { get; set; } = false;
+    public bool FoundInSparseIndex { get; set; } = false;
+    public int? SparseIndexKey { get; set; } = null;
+    public Kvp? KeyValuePair { get; set; } = null;
+
+    public SearchResult(string filename)
+    {
+        FileName = filename;
     }
 }
