@@ -7,7 +7,7 @@ public static class ReadAllSsTables
 {
     public static List<SsTable> ReadAllTables(string directoryPath)
     {
-        var files = Directory.GetFiles(directoryPath);
+        var files = Directory.GetFiles(directoryPath).Reverse().ToArray();
         var ssTables = new List<SsTable>();
         foreach (var file in files)
         {
