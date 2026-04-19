@@ -4,8 +4,14 @@ namespace Core.SSTables.Structure;
 
 public class SsTable
 {
-    public IEnumerable<Kvp> KvpList { get; set; } = null!;
-    public SparseIndex Index { get; set; } = null!;
-    public BloomFilter BloomFilter { get; set; } = null!;
-    public MetaData Footer { get; set; } = null!;
+    public string FileName { get; set; }
+    public IEnumerable<Kvp> KvpList { get; set; }
+    public SparseIndex Index { get; set; }
+    public BloomFilter BloomFilter { get; set; }
+    public MetaData Footer { get; set; }
+
+    public SsTable()
+    {
+        
+    }
 }

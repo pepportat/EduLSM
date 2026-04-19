@@ -14,9 +14,19 @@ public class SparseIndex(List<SparseIndexEntries> entries)
     /// <returns>A pair of offsets indicating the start and end of the Datablock where the key could exist</returns>
     public (long start, long end) FindPossibleOffsetRange(int searchKey)
     {
-        var start = KeyOffsetPairs.Where(x => x.Key <= searchKey).Max(x => x.Offset);
-        var end =  KeyOffsetPairs.Where(x => x.Key > searchKey).Min(x => x.Offset);
-        
+        long start, end;
+
+        start = KeyOffsetPairs.Where(x => x.Key <= searchKey).Max(x => x.Offset);
+
+        if (searchKey >= KeyOffsetPairs.Last().Key)
+        {
+            end = KeyOffsetPairs.Last().Offset;
+        }
+        else
+        {
+            end = KeyOffsetPairs.Where(x => x.Key > searchKey).Min(x => x.Offset);
+        }
+
         return (start, end);
     }
 
@@ -31,14 +41,10 @@ public class SparseIndex(List<SparseIndexEntries> entries)
         {
             return false;
         }
-        
-        if (searchKey > KeyOffsetPairs.Last().Key)
-        {
-            return false;
-        }
-        
+
         return true;
     }
+
     public override string ToString()
     {
         var sb = new StringBuilder("");
@@ -48,7 +54,7 @@ public class SparseIndex(List<SparseIndexEntries> entries)
             sb.Append(keyOffset.Key).Append(": ");
             sb.Append(keyOffset.Offset).Append('\n');
         }
-        
+
         return sb.ToString();
     }
 }
