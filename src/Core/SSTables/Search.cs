@@ -1,4 +1,5 @@
 ﻿using Core.Common;
+using Core.SSTables.IoHelpers;
 using Core.SSTables.IoOperations;
 using Core.SSTables.Structure;
 
@@ -10,9 +11,10 @@ public static class Search
     /// Searches for the kvp associated with the key in the Data Files
     /// </summary>
     /// <param name="key">Search key</param>
-    /// <param name="filePaths">File paths</param>
-    public static IEnumerable<Kvp?> SearchKey(int key, string[] filePaths)
+    /// <param name="directoryPath">Directory paths</param>
+    public static IEnumerable<Kvp?> SearchKey(int key, string directoryPath)
     {
+        var filePaths = Directory.GetFiles(directoryPath);
         int numberOfFiles = filePaths.Length;
         var kvps = new List<Kvp?>();
 
@@ -20,7 +22,6 @@ public static class Search
         {
             using (var stream = File.OpenRead(filePaths[i]))
             {
-                //TODO: remove comments when done 
                 using (var reader = new BinaryReader(stream))
                 {
                     var footer = FileReader.ReadFooter(reader);

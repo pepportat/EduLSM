@@ -11,17 +11,19 @@ public class Flush
     /// Writes the memTable to a file
     /// </summary>
     /// <param name="memTable">Memtable to be saved</param>
-    /// <param name="filePath">File Path</param>
+    /// <param name="directoryPath">Directory Path</param>
     /// <param name="falsePositiveRate">FalsePositivity rate of the bloom filter</param>
-    public static void FlushMemTable(IEnumerable<Kvp> memTable, string filePath, double falsePositiveRate = 0.01)
+    public static void FlushMemTable(IEnumerable<Kvp> memTable, string directoryPath, double falsePositiveRate = 0.01)
     {
         var memTableList = memTable.ToList();
         var keys = memTableList.Select(x => x.Key);
 
         var bloomFilter = BloomFilterBuilder.Create(keys, memTableList.Count, falsePositiveRate);
         var tableMetaData = new MetaData();
+        tableMetaData.TotalRecordCount = memTableList.Count;
+        tableMetaData.BlockCount = memTableList.Count / 10;
 
-        using (var stream = File.Open(filePath, FileMode.Create))
+        using (var stream = File.Open(GetFileName(directoryPath), FileMode.Create))
         {
             using (var writer = new BinaryWriter(stream))
             {
@@ -37,5 +39,10 @@ public class Flush
                 FileWriter.WriteFooter(writer, tableMetaData);
             }
         }
+    }
+
+    private static string GetFileName(string directoryPath)
+    {
+        return $@"{directoryPath}\{FileConstants.FileBaseName}_t1_{DateTime.Now:yyyyMMddHHmmss}";
     }
 }
