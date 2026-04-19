@@ -56,6 +56,12 @@ public static class Search
             }
             
             var offsetRange = sparseIndex.FindPossibleOffsetRange(key);
+            
+            if (offsetRange.start == offsetRange.end)
+            {
+                offsetRange.end = footer.SparseIndexOffset;
+            }
+            
             reader.BaseStream.Position = offsetRange.start;
             var dataBlocks = FileReader.ReadDataBlock(reader, offsetRange.end).ToList();
 

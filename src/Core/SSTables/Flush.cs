@@ -43,6 +43,6 @@ public class Flush
 
     private static string GetFileName(string directoryPath)
     {
-        return $@"{directoryPath}\{FileConstants.FileBaseName}_t1_{DateTime.Now:yyyyMMddHHmmss}";
+        return $@"{directoryPath}\t1_{FileConstants.FileBaseName}_{DateTime.Now:yyyyMMddHHmmss}";
     }
 }
