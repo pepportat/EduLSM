@@ -4,12 +4,12 @@ namespace Main;
 
 public static class TestHelper
 {
-    public static IEnumerable<Kvp> GetTestList(int count)
+    public static IEnumerable<Kvp> GetTestList(int count, int startingPoint = 1)
     {
         var rand = new Random();
-        for (int i = 1; i <= count; i++)
+        for (int i = startingPoint; i < startingPoint + count; i++)
         {
-            yield return new(1, "value-" + i, rand.Next(0,5) > 1 ? true : false);
+            yield return new(i, "value-" + i, rand.Next(0,5) > 1 ? true : false);
         }
     }
     
