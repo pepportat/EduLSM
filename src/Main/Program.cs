@@ -1,16 +1,24 @@
 ﻿using Main.Helpers;
 using Main.UIHandlers;
 using Raylib_cs;
+using static Main.Helpers.ArgsHelper;
 using static Raylib_cs.Raylib;
 
 namespace Main;
 
 class Program
 {
-    private static void Main()
+    private static void Main(string[] args)
     {
+        var programOptions = ParseArgs(args);
+
+        if (programOptions is null)
+        {
+            return;
+        }
+        
         var uiState = new UIState();
-        LsmEngine engine = new LsmEngine(uiState);
+        LsmEngine engine = new LsmEngine(uiState, programOptions);
         
         SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint);
         InitWindow(uiState.ScreenWidth, uiState.ScreenHeight, "Edu LSM");
@@ -33,7 +41,7 @@ class Program
                         engine.DrawMemTable();
                         break;
                     case UITab.SSTable:
-                        DrawText("SSTable", 190, 200, 20, Color.LightGray);
+                        engine.DrawSsTableScreen();
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
