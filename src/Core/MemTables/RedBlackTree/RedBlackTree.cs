@@ -56,7 +56,6 @@ public class RedBlackTree : IMemTable
         
         //mark as tombstone
         searchNode.IsTombstone = true;
-        Count--;
         steps.Add(new MemTableStep(StepKind.DeleteTombstone, $"Mark [{key}] as tombstone", searchNode.Key, GetLayout()));
         return (true, steps);
     }
@@ -161,7 +160,13 @@ public class RedBlackTree : IMemTable
             }
         }
     }
-    
+
+    public void Clear()
+    {
+        Count = 0;
+        _root = _nil;
+    }
+
     private void AddInternal(int key, string value, List<MemTableStep> steps, bool tombstone = false)
     {
         var searchNode = _root;
