@@ -5,7 +5,7 @@ using Core.SSTables.Structure;
 
 namespace Core.SSTables;
 
-public class Flush
+public static class Flush
 {
     /// <summary>
     /// Writes the memTable to a file
@@ -13,7 +13,7 @@ public class Flush
     /// <param name="memTable">Memtable to be saved</param>
     /// <param name="directoryPath">Directory Path</param>
     /// <param name="falsePositiveRate">FalsePositivity rate of the bloom filter</param>
-    public static void FlushMemTable(IEnumerable<Kvp> memTable, string directoryPath, double falsePositiveRate = 0.01)
+    public static SsTable FlushMemTable(IEnumerable<Kvp> memTable, string directoryPath, double falsePositiveRate = 0.01)
     {
         var memTableList = memTable.ToList();
         var keys = memTableList.Select(x => x.Key);
@@ -21,24 +21,29 @@ public class Flush
         var bloomFilter = BloomFilterBuilder.Create(keys, memTableList.Count, falsePositiveRate);
         var tableMetaData = new MetaData();
         tableMetaData.TotalRecordCount = memTableList.Count;
-        tableMetaData.BlockCount = memTableList.Count / 10;
+        tableMetaData.BlockCount = (int)Math.Ceiling(memTableList.Count / 10f);
 
-        using (var stream = File.Open(GetFileName(directoryPath), FileMode.Create))
+        using var stream = File.Open(GetFileName(directoryPath), FileMode.Create);
+        using var writer = new BinaryWriter(stream);
+        
+        tableMetaData.DataBlockOffset = writer.BaseStream.Position;
+        var sparseIndex = FileWriter.WriteDataBlock(writer, memTableList).ToList();
+
+        tableMetaData.SparseIndexOffset = writer.BaseStream.Position;
+        FileWriter.WriteSparseIndex(writer, sparseIndex);
+                
+        tableMetaData.BloomFilterOffset =  writer.BaseStream.Position;
+        FileWriter.WriteBloomFilter(writer, bloomFilter);
+                
+        FileWriter.WriteFooter(writer, tableMetaData);
+
+        return new SsTable
         {
-            using (var writer = new BinaryWriter(stream))
-            {
-                tableMetaData.DataBlockOffset = writer.BaseStream.Position;
-                var sparseIndex = FileWriter.WriteDataBlock(writer, memTableList);
-
-                tableMetaData.SparseIndexOffset = writer.BaseStream.Position;
-                FileWriter.WriteSparseIndex(writer, sparseIndex);
-                
-                tableMetaData.BloomFilterOffset =  writer.BaseStream.Position;
-                FileWriter.WriteBloomFilter(writer, bloomFilter);
-                
-                FileWriter.WriteFooter(writer, tableMetaData);
-            }
-        }
+            KvpList = memTableList,
+            Index = new SparseIndex(sparseIndex),
+            BloomFilter = bloomFilter,
+            Footer = tableMetaData
+        };
     }
 
     private static string GetFileName(string directoryPath)
