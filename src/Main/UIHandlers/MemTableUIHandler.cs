@@ -93,8 +93,7 @@ public partial class LsmEngine
             
         if (IsKeyDown(KeyboardKey.S) && UiState.Input.Length > 0)
         {
-            var (_, list) = Tree.Get(int.Parse(UiState.Input));
-            Steps = list;
+            Search();
             UiState.CurrentStepIndex = 0;
             UiState.Input = "";
         }
@@ -137,8 +136,10 @@ public partial class LsmEngine
                 UiState.Input = "";
                 return;
             }
+
+            var value = Faker.Random.Word();
             
-            var (_, list) = Tree.Add(int.Parse(UiState.Input), $"Data for key {UiState.Input}");
+            var (_, list) = Tree.Add(int.Parse(UiState.Input), value[..Math.Min(value.Length, 16)]);
             Steps = list;
             UiState.CurrentStepIndex = 0;
             UpdateLayout();
@@ -152,8 +153,8 @@ public partial class LsmEngine
 
         DrawRectangle(0, 0, width, UiState.ScreenHeight * 2, Color.Black);
         DrawRectangleLines(0, 0, width, UiState.ScreenHeight * 2, Color.White);
-        DrawTextEx(Font, $"Count: {Tree.Count} - Max Count: {_maxMemTableCount}", new(10, 10), fontSize, 2, Color.White);
-        DrawTextEx(Font, $"Input: {UiState.Input}", new(10, 10 + separatorHeight + fontSize), fontSize, 2, Color.White);
+        DrawTextEx(Font, $"Count: {Tree.Count} - Max Count: {_maxMemTableCount}", new Vector2(10, 10), fontSize, 2, Color.White);
+        DrawTextEx(Font, $"Input: {UiState.Input}", new Vector2(10, 10 + separatorHeight + fontSize), fontSize, 2, Color.White);
 
         for (var i = 0; i < Steps.Count; i++)
         {
@@ -161,7 +162,7 @@ public partial class LsmEngine
 
             int y = 10 + (i + 2) * separatorHeight + (i + 2) * fontSize;
 
-            DrawTextEx(Font, step.Description, new(10, y), fontSize, 2,
+            DrawTextEx(Font, step.Description, new Vector2(10, y), fontSize, 2,
                 UiState.CurrentStepIndex == i ? Color.White : Color.Gray);
         }
 
@@ -279,7 +280,7 @@ public partial class LsmEngine
             if (IsMouseButtonPressed(MouseButton.Left))
             {
                 var ssTable = Flush.FlushMemTable(Tree.GetSorted(), _dataPath);
-                SsTables.Add(ssTable);
+                SsTables = [ssTable, ..SsTables];
                 Tree.Clear();
                 Layout = Tree.GetLayout();
                 Steps = [];
