@@ -56,6 +56,7 @@ public class RedBlackTree : IMemTable
         
         //mark as tombstone
         searchNode.IsTombstone = true;
+        searchNode.Value = "";
         steps.Add(new MemTableStep(StepKind.DeleteTombstone, $"Mark [{key}] as tombstone", searchNode.Key, GetLayout()));
         return (true, steps);
     }
@@ -182,15 +183,16 @@ public class RedBlackTree : IMemTable
                 if (searchNode.IsTombstone)
                 {
                     searchNode.IsTombstone = false;
+                    searchNode.Value = value;
                     steps.Add(new MemTableStep(StepKind.InsertDuplicateUpdate, $"[{key}] tombstone cleared", key, GetLayout()));
                     Count++;
                 }
                 else
                 {
+                    searchNode.Value = value;
                     steps.Add(new MemTableStep(StepKind.InsertDuplicateUpdate, $"[{key}] updated in place", key, GetLayout()));
                 }
                 
-                searchNode.Value = value;
                 return;
             }
 
