@@ -23,7 +23,8 @@ public static class Flush
         tableMetaData.TotalRecordCount = memTableList.Count;
         tableMetaData.BlockCount = (int)Math.Ceiling(memTableList.Count / 10f);
 
-        using var stream = File.Open(GetFileName(directoryPath), FileMode.Create);
+        var filename = GetFileName(directoryPath);
+        using var stream = File.Open(filename, FileMode.Create);
         using var writer = new BinaryWriter(stream);
         
         tableMetaData.DataBlockOffset = writer.BaseStream.Position;
@@ -39,6 +40,7 @@ public static class Flush
 
         return new SsTable
         {
+            FileName = Path.GetFileName(filename),
             KvpList = memTableList,
             Index = new SparseIndex(sparseIndex),
             BloomFilter = bloomFilter,
