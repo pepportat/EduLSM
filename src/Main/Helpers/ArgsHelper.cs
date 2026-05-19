@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Help;
 
 namespace Main.Helpers;
 
@@ -12,6 +11,8 @@ public class ProgramOptions
 public static class ArgsHelper
 {
     private const int DefaultMemTableCount = 15;
+    private const int MaxMemTableCount = 30;
+    private const int MinMemTableCount = 15;
     
     public static ProgramOptions? ParseArgs(string[] args)
     {
@@ -19,9 +20,17 @@ public static class ArgsHelper
         
         Option<int> maxMemTableCount = new("--max-count")
         {
-            Description = "Maximum count of the memtable.",
-            DefaultValueFactory = _ => DefaultMemTableCount
+            Description = $"Maximum count of the memtable. (min: {MinMemTableCount}, max: {MaxMemTableCount})",
+            DefaultValueFactory = _ => DefaultMemTableCount,
         };
+        maxMemTableCount.Validators.Add(result =>
+        {
+            if (result.GetValue(maxMemTableCount) < MinMemTableCount ||
+                result.GetValue(maxMemTableCount) > MaxMemTableCount)
+            {
+                result.AddError($"Value must be between {MinMemTableCount} and {MaxMemTableCount}");
+            }
+        });
         
         Option<string> dataPath = new("--data-path")
         {
