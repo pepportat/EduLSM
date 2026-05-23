@@ -11,4 +11,5 @@ public interface IMemTable
     (string? value, List<MemTableStep> steps) Get(int key);
     IEnumerable<Kvp> GetSorted();
     Dictionary<int, NodeSnapshot> GetLayout();
+    void Clear();
 }
