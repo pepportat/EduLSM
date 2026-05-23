@@ -25,7 +25,7 @@ public static class Search
         
         for (int i = 0; i < numberOfFiles; i++)
         {
-            var result = new SearchResult(filePaths[i]);
+            var result = new SearchResult(Path.GetFileName(filePaths[i]));
             
             using var stream = File.OpenRead(filePaths[i]);
             using var reader = new BinaryReader(stream);

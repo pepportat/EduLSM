@@ -3,9 +3,9 @@ using Core.Common;
 
 namespace Core.SSTables.Structure;
 
-public class SparseIndex(IEnumerable<SparseIndexEntries> entries)
+public class SparseIndex(List<SparseIndexEntries> entries)
 {
-    public IEnumerable<SparseIndexEntries> KeyOffsetPairs { get; set; } = entries;
+    public List<SparseIndexEntries> KeyOffsetPairs { get; set; } = entries;
 
     /// <summary>
     /// Finds the offset range where the searchKey might exist
