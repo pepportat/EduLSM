@@ -14,14 +14,14 @@ public static class SsTableCompacter
         
         var compactedTableAndDictionary = CompactTier(files, directoryPath);
         
-        //DeleteFiles(files);
+        DeleteFiles(files);
 
         return compactedTableAndDictionary;
     }
 
     private static IEnumerable<string> GetAllFilesInTier(string directoryPath, int tier)
     {
-        var files = Directory.EnumerateFiles(directoryPath, "*edu_lsm_sstable*", SearchOption.AllDirectories);
+        var files = Directory.EnumerateFiles(directoryPath, $"*{FileConstants.FileBaseName}*", SearchOption.AllDirectories);
         var chunks = files.ToLookup(f =>
         {
             var fileName = Path.GetFileName(f);
