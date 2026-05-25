@@ -13,7 +13,8 @@ public static class Flush
     /// <param name="memTable">Memtable to be saved</param>
     /// <param name="directoryPath">Directory Path</param>
     /// <param name="falsePositiveRate">FalsePositivity rate of the bloom filter</param>
-    public static SsTable FlushMemTable(IEnumerable<Kvp> memTable, string directoryPath, double falsePositiveRate = 0.01)
+    /// <param name="tier">Specifies which tier the SsTable belongs in, default is t1</param>
+    public static SsTable FlushMemTable(IEnumerable<Kvp> memTable, string directoryPath, double falsePositiveRate = 0.01, int tier = 1)
     {
         var memTableList = memTable.ToList();
         var keys = memTableList.Select(x => x.Key);
@@ -23,7 +24,7 @@ public static class Flush
         tableMetaData.TotalRecordCount = memTableList.Count;
         tableMetaData.BlockCount = (int)Math.Ceiling(memTableList.Count / 10f);
 
-        var filename = GetFileName(directoryPath);
+        var filename = GetFileName(directoryPath, tier);
         using var stream = File.Open(filename, FileMode.Create);
         using var writer = new BinaryWriter(stream);
         
@@ -48,8 +49,8 @@ public static class Flush
         };
     }
 
-    private static string GetFileName(string directoryPath)
+    private static string GetFileName(string directoryPath, int tier)
     {
-        return $@"{directoryPath}\t1_{FileConstants.FileBaseName}_{DateTime.Now:yyyyMMddHHmmss}";
+        return $@"{directoryPath}\t{tier}_{FileConstants.FileBaseName}_{DateTime.Now:yyyyMMddHHmmss}";
     }
 }

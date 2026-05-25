@@ -6,8 +6,7 @@ using Core.SSTables.Structure;
 namespace Core.SSTables.IoOperations;
 
 public static class FileWriter
-{
-    // TODO: Move sparseindex building to a separate method? this is more optimal, we have to guess the offsets
+{   
     /// <summary>
     /// Writes the memtable to file
     /// </summary>
