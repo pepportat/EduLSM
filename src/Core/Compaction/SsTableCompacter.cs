@@ -8,13 +8,12 @@ namespace Core.Compaction;
 
 public static class SsTableCompacter
 {
-    public static (SsTable compactedTable, Dictionary<int, string> visualizerDictionary) CompactFiles(
-        string directoryPath, int tier)
+    public static (SsTable compactedTable, Dictionary<int, string> visualizerDictionary) CompactFiles(string directoryPath, int tier)
     {
         var files = GetAllFilesInTier(directoryPath, tier).ToList();
-
+        
         var compactedTableAndDictionary = CompactTier(files, directoryPath);
-
+        
         //DeleteFiles(files);
 
         return compactedTableAndDictionary;
@@ -38,19 +37,18 @@ public static class SsTableCompacter
 
             return 3;
         });
-
+        
         return chunks[tier].Order().TakeLast(3);
     }
-
-    private static (SsTable compactedTable, Dictionary<int, string> visualizerDictionary) CompactTier(
-        List<string> fileNames, string directoryPath)
+    
+    private static (SsTable compactedTable, Dictionary<int, string> visualizerDictionary) CompactTier(List<string> fileNames, string directoryPath)
     {
         var nextTier = GetNextTier(fileNames.First());
-
+   
         var file0 = fileNames[0];
         var file1 = fileNames[1];
         var file2 = fileNames[2];
-
+        
         using var fileIterator0 = new DataBlockIterator(file0); // Oldest
         using var fileIterator1 = new DataBlockIterator(file1); // Middle
         using var fileIterator2 = new DataBlockIterator(file2); // Newest
@@ -70,33 +68,23 @@ public static class SsTableCompacter
             if (notEmpty1 && next1!.Key < minKey) minKey = next1.Key;
             if (notEmpty2 && next2!.Key < minKey) minKey = next2.Key;
 
-            Kvp? winningKvp = null;
-
-            if (notEmpty2 && next2!.Key == minKey)
-            {
-                winningKvp = next2;
-                compactedList.Add(winningKvp);
-                visualizerDictionary[winningKvp.Key] = file2;
-                notEmpty2 = fileIterator0.Next(out next2);
-                continue;
-            }
-
-            if (notEmpty1 && next1!.Key == minKey)
-            {
-                winningKvp = next1;
-                compactedList.Add(winningKvp);
-                visualizerDictionary[winningKvp.Key] = file1;
-                notEmpty1 = fileIterator1.Next(out next0);
-                continue;
-            }
-
+            Kvp?  winningKvp = null;
+            var keyOriginFile = "";
+            
             if (notEmpty0 && next0!.Key == minKey)
             {
                 winningKvp = next0;
-                compactedList.Add(winningKvp);
-                visualizerDictionary[winningKvp.Key] = file1;
-                notEmpty0 = fileIterator0.Next(out next0);
-                continue;
+                keyOriginFile = file0;
+            }
+            if (notEmpty1 && next1!.Key == minKey)
+            {
+                winningKvp = next1;
+                keyOriginFile = file1;
+            }
+            if (notEmpty2 && next2!.Key == minKey)
+            {
+                winningKvp = next2;
+                keyOriginFile = file2;
             }
 
             if (winningKvp != null && !winningKvp.IsTombStoned)
@@ -111,21 +99,21 @@ public static class SsTableCompacter
         }
 
         var ssTable = Flush.FlushMemTable(memTable: compactedList, directoryPath: directoryPath, tier: nextTier);
-
+        
         return (ssTable, visualizerDictionary);
     }
 
     private static int GetNextTier(string fileName)
     {
         fileName = Path.GetFileName(fileName);
-
+        
         return fileName[1] switch
         {
             '1' => 2,
             _ => 3
         };
     }
-
+    
     private static void DeleteFiles(IEnumerable<string> fileNames)
     {
         foreach (var fileName in fileNames)
@@ -134,11 +122,3 @@ public static class SsTableCompacter
         }
     }
 }
-
-
-//TODO:
-/*
- * COmpactionma daabrunos sstable da ormeli key romeli failidan movida. +
- * Compactionma dzvelebic washalos +
- * FUnqcia romelic ambobs romeli tier aris dasakompaqtebeli
- */

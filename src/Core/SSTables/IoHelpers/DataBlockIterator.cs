@@ -8,7 +8,7 @@ public class DataBlockIterator : IDisposable
 {
     private string FilePath { get; set; }
 
-    private long IteratingOffset { get; set; }
+    private long StartOffset { get; set; }
     private long EndOffset { get; set; }
     private FileStream FileStream { get; set; }
     private BinaryReader Reader { get; set; }
@@ -25,20 +25,21 @@ public class DataBlockIterator : IDisposable
 
         Reader.BaseStream.Seek(-MetaData.ByteLenght, SeekOrigin.End);
 
-        IteratingOffset = Reader.ReadInt64();
+        StartOffset = Reader.ReadInt64();
+        Reader.BaseStream.Position += 8;
         EndOffset = Reader.ReadInt64();
 
-        Reader.BaseStream.Position = IteratingOffset;
+        Reader.BaseStream.Position = StartOffset;
     }
 
     /// <summary>
-    /// Iterates through the Sstable
+    /// Iterates through the SsTable DataBlock segment
     /// </summary>
-    /// <param name="result"></param>
-    /// <returns></returns>
+    /// <param name="result">Out parameter</param>
+    /// <returns>True if the end of the DataBlock segment has not been reached by the </returns>
     public bool Next(out Kvp? result)
     {
-        if (IteratingOffset >= EndOffset)
+        if (Reader.BaseStream.Position >= EndOffset)
         {
             result = null;
             return false;
