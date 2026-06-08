@@ -1,25 +1,15 @@
-﻿namespace Core.Compaction;
+﻿using Core.Common;
+using static Core.Common.FileNameHelpers;
+
+namespace Core.Compaction;
 
 public static class TierMonitor
 {
     public static List<int> NeedsCompaction(string directoryPath)
     {
         var tiers = new List<int>();
-        var files = Directory.EnumerateFiles(directoryPath, "*edu_lsm_sstable*", SearchOption.AllDirectories);
-        var chunks = files.ToLookup(f =>
-        {
-            if (f.StartsWith("t1"))
-            {
-                return 1;
-            }
-
-            if (f.StartsWith("t2"))
-            {
-                return 2;
-            }
-
-            return 3;
-        });
+        var files = Directory.EnumerateFiles(directoryPath, $"*{FileConstants.FileBaseName}*", SearchOption.AllDirectories);
+        var chunks = files.ToLookup(f => GetSsTableFileTier(Path.GetFileName(f)));
 
         var tier1Count = chunks[1].Count();
         var tier2Count = chunks[2].Count();

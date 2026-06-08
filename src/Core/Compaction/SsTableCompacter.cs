@@ -1,8 +1,8 @@
 ﻿using Core.Common;
 using Core.SSTables;
 using Core.SSTables.IoHelpers;
-using Core.SSTables.IoOperations;
 using Core.SSTables.Structure;
+using static Core.Common.FileNameHelpers;
 
 namespace Core.Compaction;
 
@@ -23,20 +23,8 @@ public static class SsTableCompacter
     {
         var files = Directory.EnumerateFiles(directoryPath, $"*{FileConstants.FileBaseName}*", SearchOption.AllDirectories);
         var chunks = files.ToLookup(f =>
-        {
-            var fileName = Path.GetFileName(f);
-            if (fileName.StartsWith("t1"))
-            {
-                return 1;
-            }
-
-            if (fileName.StartsWith("t2"))
-            {
-                return 2;
-            }
-
-            return 3;
-        });
+            GetSsTableFileTier(Path.GetFileName(f))
+        );
         
         return chunks[tier].Order().TakeLast(3);
     }
