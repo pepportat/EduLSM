@@ -1,14 +1,16 @@
 ﻿using Core.SSTables.IoOperations;
 using Core.SSTables.Structure;
+using static Core.Common.FileNameHelpers;
 
 namespace Core.SSTables.VisualizerHelpers;
 
 public static class ReadAllSsTables
 {
-    public static List<SsTable> ReadAllTables(string directoryPath)
+    public static Dictionary<int, List<SsTable>> ReadAllTables(string directoryPath)
     {
         var files = Directory.GetFiles(directoryPath).Reverse().ToArray();
-        var ssTables = new List<SsTable>();
+        var ssTables = new List<SsTable>(capacity: files.Length);
+        
         foreach (var file in files)
         {
             using (var stream = File.OpenRead(file))
@@ -35,6 +37,8 @@ public static class ReadAllSsTables
             }
         }
 
-        return ssTables;
+        return ssTables
+            .GroupBy(s => GetSsTableFileTier(s.FileName))
+            .ToDictionary(g => g.Key, g => g.ToList());
     }
 }
