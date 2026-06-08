@@ -258,7 +258,6 @@ public partial class LsmEngine
             {
                 var (arrowY, key) = arrowSources[i];
                 int dataRowIndex = dataBlock.FindIndex(k => k.Key == key);
-                //if (dataRowIndex < 0) continue; //TODO: This should never happen???
 
                 int targetY = dataStartY + dataRowIndex * (RowHeight + 1) + RowHeight / 2;
                 int arrowX = x + CardWidth - SectionPadding;
