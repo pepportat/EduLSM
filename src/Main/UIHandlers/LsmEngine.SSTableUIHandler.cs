@@ -1,28 +1,40 @@
 using System.Numerics;
+using Core.Compaction;
 using Core.SSTables.Structure;
+using Core.SSTables.VisualizerHelpers;
+using Main.Components;
+using Main.Helpers;
 using Raylib_cs;
 using static Main.Helpers.CameraHelpers;
 using static Main.Helpers.CustomGridHelper;
 using static Raylib_cs.Raylib;
+using static Main.Components.CardSegment;
+using static Core.Common.FileNameHelpers;
 
 namespace Main.UIHandlers;
 
 public partial class LsmEngine
 {
     private const int CardWidth = 400;
+    private const int CardSpacing = CardWidth + 60;
     private const int StartX = 40;
     private const int StartY = 40;
     private const int FontSize = 16;
     private const int RowHeight = 22;
     private const int SectionPadding = 10;
     private const int BitCellSize = 10;
+    private const int SparseSampleInterval = 10;
     
     private Camera2D _ssTableCamera = new()
     {
         Zoom = 1.0f
     };
 
-    private List<SsTable> SsTables { get; set; }
+    private Dictionary<int, List<SsTable>> SsTables { get; set; }
+    private SsTableTabState _ssTableTabState;
+    private List<int> CompactionNeededTiers { get; set; }
+    private int? CleanupNeededTier { get; set; }
+    private CompactionVisualizerData? _compactionVisualizerData;
     
     public void DrawSsTableScreen()
     {
@@ -39,25 +51,49 @@ public partial class LsmEngine
         
         BeginMode2D(_ssTableCamera);
             Rlgl.PushMatrix();
-                Rlgl.Translatef(1000, 2600, 0);
+                Rlgl.Translatef(-500, 4500, 0);
+                Rlgl.Rotatef(90, 0, 0, 1);
                 Rlgl.Rotatef(90, 1, 0, 0);
                 DrawGridCustom(200, 50, Color.DarkGray);
             Rlgl.PopMatrix();
-
-
-            for (var i = 0; i < SsTables.Count; i++)
+            
+            var runningY = StartY;
+            
+            foreach (var tier in SsTables.OrderBy(t => t.Key))
             {
-                int x = StartX + i * (CardWidth + 60);
-                
-                var ssTable = SsTables[i];
-                DrawSsTable(ssTable, x, StartY);
+                runningY += DrawSsTableTier(StartX, runningY, tier.Value, tier.Key);
             }
 
-            EndMode2D();
+        EndMode2D();
+        
+        DrawCompactButton();
+        DrawFileCleanupButton();
     }
 
-    private void DrawSsTable(SsTable ssTable, int x, int y)
+    private int DrawSsTableTier(int x, int y, List<SsTable> ssTables, int tier)
     {
+        List<int> ssTableHeights = [];
+        
+        DrawTextEx(Font, $"Tier {tier}", new Vector2(x, y), 28, 2, Color.White);
+        
+        var allSsTableWidth = ssTables.Count * CardSpacing;
+        DrawLine(x, y + 34, x + allSsTableWidth, y + 34, Color.White);
+        
+        for (var i = 0; i < ssTables.Count; i++)
+        {
+            int ssTableX = x + i * CardSpacing;
+            
+            var ssTable = ssTables[i];
+            ssTableHeights.Add(DrawSsTable(ssTable, ssTableX, y + 44));
+        }
+        
+        return ssTableHeights.DefaultIfEmpty(0).Max() + 72;
+    }
+    
+    private int DrawSsTable(SsTable ssTable, int x, int y)
+    {
+        var startingY = y;
+        
         var dataBlock = ssTable.KvpList.ToList();
         var sparseIndex = ssTable.Index;
         var bloom = ssTable.BloomFilter;
@@ -74,32 +110,29 @@ public partial class LsmEngine
         y += DrawBloomFilter() + 8;
 
         // Sparse Index
-        y += DrawSparseIndex(arrowSources) + 8;
+        y += DrawSparseIndex() + 8;
 
         // Data Block
-        var dataRowY = DrawDataBlock();
+        var dataBlockStartY = DrawDataBlock(out int datablockHeight);
+        y += datablockHeight;
 
         // Sparse Index arrows
-        DrawSparseIndexConnections(dataRowY);
+        DrawSparseIndexConnections(dataBlockStartY);
 
-        return;
-
-        void DrawCardSegment(int xc, int yc, int width, int height, Color bgColor, Color borderColor)
-        {
-            DrawRectangleRounded(new Rectangle(xc, yc, width, height), Roundness(width, height, 8f), 8, bgColor);
-            DrawRectangleRoundedLinesEx(new Rectangle(xc, yc, width, height), Roundness(width, height, 8f), 8, 2, borderColor);
-        }
-
-        float Roundness(float width, float height, float targetRadiusPx)
-        {
-            return targetRadiusPx * 2f / Math.Min(width, height);
-        }
+        return y - startingY;
 
         int DrawHeader()
         {
             const int headerHeight = RowHeight + SectionPadding;
 
-            DrawRectangleRounded(new Rectangle(x, y, CardWidth, headerHeight), 0.3f, 8, new Color(30, 41, 59, 255));
+            var color = new Color(30, 41, 59, 255);
+
+            if (_compactionVisualizerData is not null && _compactionVisualizerData.CompactedTables.Contains(ssTable))
+            {
+                color = _compactionVisualizerData.SsTableColor(ssTable);
+            }
+            
+            DrawRectangleRounded(new Rectangle(x, y, CardWidth, headerHeight), 0.3f, 8, color);
             DrawTextEx(Font, $"Records: {meta.TotalRecordCount}  Sparse Index Count: {meta.BlockCount}",
                 new Vector2(x + SectionPadding, y + SectionPadding), FontSize, 2, Color.White);
 
@@ -144,7 +177,7 @@ public partial class LsmEngine
             return bloomHeight;
         }
 
-        int DrawSparseIndex(List<(int arrowY, int key)> arrowSourcesList)
+        int DrawSparseIndex()
         {
             var sparseHeight = sparseIndex.KeyOffsetPairs.Count * RowHeight + RowHeight + SectionPadding * 2;
 
@@ -176,15 +209,15 @@ public partial class LsmEngine
                     sparseIndexColor);
                 DrawTextEx(Font, $"Key: {entry.Key}  ->  offset: {entry.Offset}",
                     new Vector2(x + SectionPadding + 4, ry + 3), FontSize, 2, Color.White);
-                arrowSourcesList.Add((ry + RowHeight / 2, entry.Key));
+                arrowSources.Add((ry + RowHeight / 2, entry.Key));
             }
 
             return sparseHeight;
         }
 
-        int DrawDataBlock()
+        int DrawDataBlock(out int dataHeight)
         {
-            int dataHeight = dataBlock.Count * (RowHeight + 1) + RowHeight + SectionPadding * 2;
+            dataHeight = dataBlock.Count * (RowHeight + 1) + RowHeight + SectionPadding * 2;
             
             DrawCardSegment(x, y, CardWidth, dataHeight, new Color(15, 23, 42, 255), Color.DarkGray);
             DrawTextEx(Font, "Data Block", new Vector2(x + SectionPadding, y + SectionPadding), FontSize, 2,
@@ -201,6 +234,11 @@ public partial class LsmEngine
                     DrawRectangle(x + SectionPadding, ry, CardWidth - SectionPadding * 2, RowHeight,
                         new Color(220, 38, 38, 60));
 
+                if (_compactionVisualizerData is not null && _compactionVisualizerData.CompactionResult == ssTable)
+                {
+                    DrawRectangle(x + SectionPadding, ry, CardWidth - SectionPadding * 2, RowHeight,
+                        _compactionVisualizerData.KeyColor(kvp.Key));
+                }
                 
                 Color keyColor = searchResult?.KeyValuePair?.Key == kvp.Key ? Color.Green : new Color(50, 60, 80, 255);
                 
@@ -214,15 +252,15 @@ public partial class LsmEngine
             return dataRowStartY;
         }
 
-        void DrawSparseIndexConnections(int dataRowStartY)
+        void DrawSparseIndexConnections(int dataStartY)
         {
             for (var i = 0; i < arrowSources.Count; i++)
             {
                 var (arrowY, key) = arrowSources[i];
                 int dataRowIndex = dataBlock.FindIndex(k => k.Key == key);
-                if (dataRowIndex < 0) continue;
+                //if (dataRowIndex < 0) continue; //TODO: This should never happen???
 
-                int targetY = dataRowStartY + dataRowIndex * (RowHeight + 1) + RowHeight / 2;
+                int targetY = dataStartY + dataRowIndex * (RowHeight + 1) + RowHeight / 2;
                 int arrowX = x + CardWidth - SectionPadding;
 
                 var sparseIndexUsed = searchResult?.SparseIndexKey == key;
@@ -254,11 +292,11 @@ public partial class LsmEngine
                 {
                     var lineX = x + SectionPadding / 2f;
                     var lineYStart = targetY - (RowHeight + 1) / 2f;
-                    var lineYEnd = targetY + 9.5f * (RowHeight + 1);
+                    var lineYEnd = targetY + (SparseSampleInterval - 0.5f) * (RowHeight + 1);
 
-                    if (dataBlock.Count - 10 < dataRowIndex)
+                    if (dataBlock.Count - SparseSampleInterval < dataRowIndex)
                     {
-                        var numRowsToInclude = dataRowIndex - (dataBlock.Count - 10) - 0.5f;
+                        var numRowsToInclude = dataBlock.Count - dataRowIndex - 0.5f;
                         lineYEnd = targetY + numRowsToInclude * (RowHeight + 1);
                     }
                     
@@ -266,5 +304,64 @@ public partial class LsmEngine
                 }
             }
         }
+    }
+
+    private void DrawCompactButton()
+    {
+        Button.DrawActionButton(
+            UiState.ScreenWidth - 100 - 10,
+            "Compact",
+            0,
+            CompactionNeededTiers.Count != 0 && CleanupNeededTier is null,
+            Font,
+            () =>
+            {
+                _ssTableTabState = SsTableTabState.Compacting;
+                var (ssTable, keySources) = SsTableCompacter.CompactFiles(_dataPath, CompactionNeededTiers[0]);
+
+                var tierAddedTo = GetSsTableFileTier(ssTable.FileName);
+
+                if (SsTables.TryGetValue(tierAddedTo, out var tier))
+                {
+                    SsTables[tierAddedTo] = tier.Prepend(ssTable).ToList();
+                }
+                else
+                {
+                    SsTables[tierAddedTo] = [ssTable];
+                }
+
+                _compactionVisualizerData = new CompactionVisualizerData
+                (
+                    compactedTables: SsTables[CompactionNeededTiers[0]],
+                    compactionResult: ssTable,
+                    keySources: keySources
+                );
+
+                CleanupNeededTier = CompactionNeededTiers[0];
+                CompactionNeededTiers.RemoveAt(0);
+            }
+        );
+    }
+
+    private void DrawFileCleanupButton()
+    {
+        Button.DrawActionButton(
+            UiState.ScreenWidth - 100 - 10,
+            "Cleanup",
+            1,
+            CleanupNeededTier is not null, 
+            Font,
+            () =>
+            {
+                CleanupNeededTier = null;
+                _compactionVisualizerData = null;
+                SsTables = ReadAllSsTables.ReadAllTables(_dataPath);
+
+                if (CompactionNeededTiers.Count == 0)
+                {
+                    _ssTableTabState = SsTableTabState.Viewing;
+                }
+            }
+        );
     }
 }

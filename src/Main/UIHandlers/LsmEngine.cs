@@ -6,6 +6,7 @@ using Core.MemTables.RedBlackTree.VisualizerHelpers;
 using Core.SSTables;
 using Main.Helpers;
 using Raylib_cs;
+using static Core.Compaction.TierMonitor;
 using static Core.SSTables.VisualizerHelpers.ReadAllSsTables;
 using static Core.SSTables.Search;
 
@@ -13,13 +14,10 @@ namespace Main.UIHandlers;
 
 public partial class LsmEngine
 {
-    private UIState UiState { get; set; }
-    private IMemTable Tree { get; set;}
-    private Dictionary<int, NodeSnapshot> Layout { get; set; }
-    private List<MemTableStep> Steps { get; set; }
+    private UIState UiState { get; }
     private List<SearchResult> SsTablesSearchResults { get; set; }
     public Font Font { get; set; }
-    private Faker Faker { get; set; }
+
     
     private readonly string _dataPath;
     
@@ -34,13 +32,16 @@ public partial class LsmEngine
         _dataPath = Path.Combine(programOptions.DataPath, FileConstants.DataDirectoryName);
         Faker = new Faker();
         
-        
         if (!Directory.Exists(_dataPath))
         {
             Directory.CreateDirectory(_dataPath);
         }
         
         SsTables = ReadAllTables(_dataPath);
+        CompactionNeededTiers = NeedsCompaction(_dataPath);
+        CleanupNeededTier = null;
+
+        _ssTableTabState = CompactionNeededTiers.Count == 0 ? SsTableTabState.Viewing : SsTableTabState.Compacting;
     }
 
     private void Search()
@@ -66,5 +67,20 @@ public partial class LsmEngine
     private void UpdateLayout()
     {
         Layout = Tree.GetLayout();
+    }
+    
+    private bool InputEnabled()
+    {
+        if (Tree.Count >= _maxMemTableCount)
+        {
+            return false;
+        }
+
+        if (_ssTableTabState == SsTableTabState.Compacting)
+        {
+            return false;
+        }
+        
+        return true;
     }
 }
