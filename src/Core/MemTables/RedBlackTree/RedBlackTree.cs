@@ -94,7 +94,7 @@ public class RedBlackTree : IMemTable
 
     public Dictionary<int, NodeSnapshot> GetLayout()
     {
-        if (_root.IsNil) return new Dictionary<int, NodeSnapshot>();
+        if (IsNil(_root)) return new Dictionary<int, NodeSnapshot>();
 
         const float siblingDistance = 30f;
         const float levelDistance = 80f;
@@ -104,8 +104,7 @@ public class RedBlackTree : IMemTable
         var result = new Dictionary<int, NodeSnapshot>();
         int index = 0;
 
-        AssignX(_root, 0);
-        CenterParents(_root);
+        CalculateXs(_root, 0);
 
         float rootX = xPos[_root];
         foreach (var kvp in xPos)
@@ -123,42 +122,17 @@ public class RedBlackTree : IMemTable
 
         return result;
 
-        void AssignX(RedBlackNode node, int depth)
+        void CalculateXs(RedBlackNode node, int depth)
         {
-            while (true)
-            {
-                if (node.IsNil) return;
-                depths[node] = depth;
-                AssignX(node.Left, depth + 1);
-                xPos[node] = index++ * siblingDistance;
-                node = node.Right;
-                depth = depth + 1;
-            }
-        }
+            if (IsNil(node)) return;
+            
+            depths[node] = depth;
+            
+            CalculateXs(node.Left, depth + 1);
+            
+            xPos[node] = index++ * siblingDistance;
 
-        void CenterParents(RedBlackNode node)
-        {
-            if (node.IsNil) return;
-            CenterParents(node.Left);
-            CenterParents(node.Right);
-
-            if (node.Left.IsNil && node.Right.IsNil)
-            {
-                return;
-            }
-
-            if (node.Left.IsNil)
-            {
-                xPos[node] = xPos[node.Right] - siblingDistance / 2f;
-            }
-            else if (node.Right.IsNil)
-            {
-                xPos[node] = xPos[node.Left] + siblingDistance / 2f;
-            }
-            else
-            {
-                xPos[node] = (xPos[node.Left] + xPos[node.Right]) / 2f;
-            }
+            CalculateXs(node.Right, depth + 1);
         }
     }
 
@@ -185,7 +159,6 @@ public class RedBlackTree : IMemTable
                     searchNode.IsTombstone = false;
                     searchNode.Value = value;
                     steps.Add(new MemTableStep(StepKind.InsertDuplicateUpdate, $"[{key}] tombstone cleared", key, GetLayout()));
-                    Count++;
                 }
                 else
                 {
