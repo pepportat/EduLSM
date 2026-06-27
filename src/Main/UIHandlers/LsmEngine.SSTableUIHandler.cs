@@ -74,7 +74,7 @@ public partial class LsmEngine
     {
         List<int> ssTableHeights = [];
         
-        DrawTextEx(Font, $"Tier {tier}", new Vector2(x, y), 28, 2, Color.White);
+        DrawTextEx(Font, $"Tier {tier} (newest to oldest)", new Vector2(x, y), 28, 2, Color.White);
         
         var allSsTableWidth = ssTables.Count * CardSpacing;
         DrawLine(x, y + 34, x + allSsTableWidth, y + 34, Color.White);
