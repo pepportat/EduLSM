@@ -240,13 +240,13 @@ public class RedBlackTree : IMemTable
                 steps.Add(new MemTableStep(StepKind.FixupCase, $"Case 1{(pLeft ? "" : "m")}: Uncle RED — recolour parent/uncle BLACK, grandparent RED", node.Parent.Parent.Key, GetLayout()));
                 
                 node.Parent.Color = NodeColor.Black;
-                steps.Add(new MemTableStep(StepKind.Recolour, $"Recolour parent [{node.Parent.Key}]:->BLACK", node.Parent.Key, GetLayout()));
+                steps.Add(new MemTableStep(StepKind.Recolor, $"Recolor parent [{node.Parent.Key}]:->BLACK", node.Parent.Key, GetLayout()));
                 
                 uncle.Color = NodeColor.Black;
-                steps.Add(new MemTableStep(StepKind.Recolour, $"Recolour uncle [{uncle.Key}]:->BLACK", uncle.Key, GetLayout()));
+                steps.Add(new MemTableStep(StepKind.Recolor, $"Recolor uncle [{uncle.Key}]:->BLACK", uncle.Key, GetLayout()));
                 
                 node.Parent.Parent.Color = NodeColor.Red;
-                steps.Add(new MemTableStep(StepKind.Recolour, $"Recolour grandparent [{node.Parent.Parent.Key}]:->RED", node.Parent.Parent.Key, GetLayout()));
+                steps.Add(new MemTableStep(StepKind.Recolor, $"Recolor grandparent [{node.Parent.Parent.Key}]:->RED", node.Parent.Parent.Key, GetLayout()));
                 
                 node = node.Parent.Parent;
             }
@@ -266,10 +266,10 @@ public class RedBlackTree : IMemTable
                     
                     
                     node.Parent.Color = NodeColor.Black;
-                    steps.Add(new MemTableStep(StepKind.Recolour, $"Recolour parent [{node.Parent.Key}]:->BLACK", node.Parent.Key, GetLayout()));
+                    steps.Add(new MemTableStep(StepKind.Recolor, $"Recolor parent [{node.Parent.Key}]:->BLACK", node.Parent.Key, GetLayout()));
                     
                     node.Parent.Parent.Color = NodeColor.Red;
-                    steps.Add(new MemTableStep(StepKind.Recolour, $"Recolour grandparent [{node.Parent.Parent.Key}]:->RED", node.Parent.Parent.Key, GetLayout()));
+                    steps.Add(new MemTableStep(StepKind.Recolor, $"Recolor grandparent [{node.Parent.Parent.Key}]:->RED", node.Parent.Parent.Key, GetLayout()));
                     
                     RotateRight(node.Parent.Parent, steps);
                 }
@@ -285,17 +285,17 @@ public class RedBlackTree : IMemTable
                     steps.Add(new MemTableStep(StepKind.FixupCase, $"Case 3b: Right-line — recolour + left-rotate grandparent [{node.Parent.Parent.Key}]", node.Parent.Parent.Key, GetLayout()));
                     
                     node.Parent.Color = NodeColor.Black;
-                    steps.Add(new MemTableStep(StepKind.Recolour, $"Recolour parent [{node.Parent.Key}]:->BLACK", node.Parent.Key, GetLayout()));
+                    steps.Add(new MemTableStep(StepKind.Recolor, $"Recolor parent [{node.Parent.Key}]:->BLACK", node.Parent.Key, GetLayout()));
                     
                     node.Parent.Parent.Color = NodeColor.Red;
-                    steps.Add(new MemTableStep(StepKind.Recolour, $"Recolour grandparent [{node.Parent.Parent.Key}]:->RED", node.Parent.Parent.Key, GetLayout()));
+                    steps.Add(new MemTableStep(StepKind.Recolor, $"Recolor grandparent [{node.Parent.Parent.Key}]:->RED", node.Parent.Parent.Key, GetLayout()));
                     
                     RotateLeft(node.Parent.Parent, steps);
                 }
             }
         }
         _root.Color = NodeColor.Black;
-        steps.Add(new MemTableStep(StepKind.Recolour, "Recolour root:-> BLACK", _root.Key, GetLayout()));
+        steps.Add(new MemTableStep(StepKind.Recolor, "Recolor root:-> BLACK", _root.Key, GetLayout()));
     }
     
     private void RotateLeft(RedBlackNode node, List<MemTableStep> steps)

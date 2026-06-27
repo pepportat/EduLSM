@@ -22,7 +22,7 @@ class Program
         
         SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint);
         InitWindow(uiState.ScreenWidth, uiState.ScreenHeight, "Edu LSM");
-        engine.Font = LoadFont("./resources/Roboto-Medium.ttf");
+        engine.Font = LoadFont(Path.Combine(AppContext.BaseDirectory, "resources", "Roboto-Medium.ttf"));
         SetTextureFilter(engine.Font.Texture, TextureFilter.Bilinear);
         
         SetTargetFPS(60);

@@ -27,7 +27,7 @@ public static class StepColorHelper
             StepKind.FixupCase  => new(129, 140, 248, 255),   // indigo-400
 
             StepKind.Rotation   => new(34,  211, 238, 255),   // cyan-400
-            StepKind.Recolour   => new(192, 132, 252, 255),   // purple-400
+            StepKind.Recolor   => new(192, 132, 252, 255),   // purple-400
 
             _ => new(148, 163, 184, 255),
         };
