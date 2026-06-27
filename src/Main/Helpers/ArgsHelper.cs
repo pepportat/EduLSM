@@ -10,9 +10,9 @@ public class ProgramOptions
 
 public static class ArgsHelper
 {
-    private const int DefaultMemTableCount = 15;
-    private const int MaxMemTableCount = 30;
-    private const int MinMemTableCount = 15;
+    private const int DefaultMemTableCount = 10;
+    private const int MaxMemTableCount = 20;
+    private const int MinMemTableCount = 10;
     
     public static ProgramOptions? ParseArgs(string[] args)
     {

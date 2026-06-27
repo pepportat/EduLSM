@@ -2,11 +2,8 @@ namespace Core.MemTables.RedBlackTree;
 
 public class RedBlackNode
 {
-    public RedBlackNode(
-        bool isNil
-    )
+    private RedBlackNode()
     {
-        IsNil = isNil;
         Value = string.Empty;
         Key = -1;
         Color = NodeColor.Black;
@@ -37,17 +34,16 @@ public class RedBlackNode
 
     public static RedBlackNode CreateNil()
     {
-        return new RedBlackNode(true);
+        return new RedBlackNode();
     }
     
     public int Key { get; set; }
     public string Value { get; set; }
     public bool IsTombstone { get; set; }
     public NodeColor Color { get; set; }
-    public bool IsNil { get; set; }
     
 
-    public RedBlackNode Left { get; set; } = null!;
-    public RedBlackNode Right { get; set; } = null!;
-    public RedBlackNode Parent { get; set; } = null!;
+    public RedBlackNode Left { get; set; }
+    public RedBlackNode Right { get; set; }
+    public RedBlackNode Parent { get; set; }
 }
