@@ -18,6 +18,6 @@ public enum StepKind
     DeleteNotFound,
     
     FixupCase,
-    Recolour,
+    Recolor,
     Rotation,
 }

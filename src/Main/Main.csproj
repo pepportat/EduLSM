@@ -18,9 +18,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="resources\Roboto-Medium.ttf">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+        <Content Include="resources\**">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>
