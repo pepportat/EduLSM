@@ -48,7 +48,7 @@ foreach ($rid in $Rids) {
     # Zip for distribution. Retry briefly: on Windows, antivirus/Defender often
     # holds a short-lived lock on the just-written .exe. NOTE: zips created on
     # Windows do not carry the Unix execute bit, so Linux/macOS users must run
-    # `chmod +x Main` after extracting.
+    # `chmod +x EduLSM` after extracting.
     $zip = Join-Path $OutRoot "EduLSM-$rid.zip"
     if (Test-Path $zip) { Remove-Item $zip }
     for ($attempt = 1; ; $attempt++) {
