@@ -76,16 +76,11 @@ public static class Search
     }
 }
 
-public class SearchResult
+public record SearchResult(string FileName)
 {
-    public string FileName { get; set; }
+    public string FileName { get; set; } = FileName;
     public bool FoundInBloomFilter { get; set; } = false;
     public bool FoundInSparseIndex { get; set; } = false;
     public int? SparseIndexKey { get; set; } = null;
     public Kvp? KeyValuePair { get; set; } = null;
-
-    public SearchResult(string filename)
-    {
-        FileName = filename;
-    }
 }

@@ -29,8 +29,10 @@ class Program
         
         while (!WindowShouldClose())
         {
-            uiState.UpdateScreenHeightAndWidth();
-            uiState.SwitchTab();
+            engine.UiState.UpdateScreenHeightAndWidth();
+            engine.UiState.SwitchTab();
+            
+            SetMouseCursor(engine.UiState.CurrentMouseCursor);
             
             BeginDrawing();
                 ClearBackground(new Color(3, 7, 18, 255));

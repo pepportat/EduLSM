@@ -1,6 +1,5 @@
 using Bogus;
 using Core.Common;
-using Core.MemTables;
 using Core.MemTables.RedBlackTree;
 using Core.MemTables.RedBlackTree.VisualizerHelpers;
 using Core.SSTables;
@@ -14,8 +13,7 @@ namespace Main.UIHandlers;
 
 public partial class LsmEngine
 {
-    private UIState UiState { get; }
-    private List<SearchResult> SsTablesSearchResults { get; set; }
+    public UIState UiState { get; private set; }
     public Font Font { get; set; }
 
     
@@ -82,5 +80,12 @@ public partial class LsmEngine
         }
         
         return true;
+    }
+
+    private void SetCurrentMouseCursor(MouseCursor? mouseCursor)
+    {
+        if (mouseCursor is null) return;
+        
+        UiState.CurrentMouseCursor = mouseCursor.Value;
     }
 }

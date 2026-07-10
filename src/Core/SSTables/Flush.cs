@@ -51,6 +51,6 @@ public static class Flush
 
     private static string GetFileName(string directoryPath, int tier)
     {
-        return Path.Combine(directoryPath, $"t{tier}_{FileConstants.FileBaseName}_{DateTime.Now:yyyyMMddHHmmss}");
+        return Path.Combine(directoryPath, $"t{tier}_{FileConstants.FileBaseName}_{DateTime.UtcNow:yyyyMMddHHmmss}");
     }
 }

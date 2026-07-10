@@ -14,7 +14,8 @@ public class UIState
     public string Input { get; set; } = string.Empty;
     public int CurrentStepIndex { get; set; } = 0;
     public UITab CurrentTab { get; set; } = UITab.MemTable;
-    
+    public MouseCursor CurrentMouseCursor { get; set; } = MouseCursor.Default;
+
     public void UpdateScreenHeightAndWidth()
     {
         ScreenWidth = GetScreenWidth();

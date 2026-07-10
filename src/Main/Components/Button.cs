@@ -6,7 +6,7 @@ namespace Main.Components;
 
 public static class Button
 {
-    public static void DrawActionButton(int x, string label, int slot, bool enabled, Font font, Action onClick)
+    public static MouseCursor? DrawActionButton(int x, string label, int slot, bool enabled, Font font, Action onClick)
     {
         const int w = 100, h = 40;
         int y = 10 + slot * (h + 10);
@@ -18,6 +18,7 @@ public static class Button
         DrawTextEx(font, label, new Vector2(x + (w - tw) / 2f, y + 10), 20, 2,
             enabled ? Color.White : Color.LightGray);
 
+
         if (enabled && CheckCollisionPointRec(GetMousePosition(), rect))
         {
             DrawRectangleRoundedLines(rect, 0.4f, 10, Color.White);
@@ -25,6 +26,14 @@ public static class Button
             {
                 onClick();
             }
+            return MouseCursor.PointingHand;
         }
+
+        if (CheckCollisionPointRec(GetMousePosition(), rect))
+        {
+            return MouseCursor.NotAllowed;
+        }
+
+        return null;
     }
 }

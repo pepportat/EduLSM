@@ -1,5 +1,6 @@
 using System.Numerics;
 using Core.Compaction;
+using Core.SSTables;
 using Core.SSTables.Structure;
 using Core.SSTables.VisualizerHelpers;
 using Main.Components;
@@ -24,6 +25,8 @@ public partial class LsmEngine
     private const int SectionPadding = 10;
     private const int BitCellSize = 10;
     private const int SparseSampleInterval = 10;
+    
+    private List<SearchResult> SsTablesSearchResults { get; set; }
     
     private Camera2D _ssTableCamera = new()
     {
@@ -68,6 +71,7 @@ public partial class LsmEngine
         
         DrawCompactButton();
         DrawFileCleanupButton();
+        DrawDataPath();
     }
 
     private int DrawSsTableTier(int x, int y, List<SsTable> ssTables, int tier)
@@ -307,7 +311,7 @@ public partial class LsmEngine
 
     private void DrawCompactButton()
     {
-        Button.DrawActionButton(
+        var mouseCursor = Button.DrawActionButton(
             UiState.ScreenWidth - 100 - 10,
             "Compact",
             0,
@@ -340,11 +344,13 @@ public partial class LsmEngine
                 CompactionNeededTiers.RemoveAt(0);
             }
         );
+        
+        SetCurrentMouseCursor(mouseCursor);
     }
 
     private void DrawFileCleanupButton()
     {
-        Button.DrawActionButton(
+        var mouseCursor = Button.DrawActionButton(
             UiState.ScreenWidth - 100 - 10,
             "Cleanup",
             1,
@@ -362,5 +368,12 @@ public partial class LsmEngine
                 }
             }
         );
+        
+        SetCurrentMouseCursor(mouseCursor);
+    }
+    
+    private void DrawDataPath()
+    {
+        DrawTextEx(Font, _dataPath, new Vector2(10, UiState.ScreenHeight - FontSize - 10), FontSize, 2, Color.White);
     }
 }

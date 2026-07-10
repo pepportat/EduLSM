@@ -260,7 +260,7 @@ public partial class LsmEngine
 
     private void DrawFlushButton()
     {
-        Button.DrawActionButton(
+        var mouseCursor = Button.DrawActionButton(
             UiState.ScreenWidth - 100 - 10,
             "Flush",
             0,
@@ -284,6 +284,7 @@ public partial class LsmEngine
             }
         );
         
+        SetCurrentMouseCursor(mouseCursor);
     }
     
     private void AddOnHoverForNodes(NodeSnapshot node, int radius = 20, int fontSize = 10)
