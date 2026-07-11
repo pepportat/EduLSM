@@ -23,7 +23,7 @@ public class DataBlockIterator : IDisposable
         FileStream = File.OpenRead(FilePath);
         Reader = new BinaryReader(FileStream);
 
-        Reader.BaseStream.Seek(-MetaData.ByteLenght, SeekOrigin.End);
+        Reader.BaseStream.Seek(-MetaData.ByteLength, SeekOrigin.End);
 
         StartOffset = Reader.ReadInt64();
         Reader.BaseStream.Position += 8;

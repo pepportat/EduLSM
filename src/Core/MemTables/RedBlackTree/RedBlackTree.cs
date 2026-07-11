@@ -23,16 +23,16 @@ public class RedBlackTree : IMemTable
     
     private bool IsNil(RedBlackNode node) => node == _nil;
     
-    public (bool result, List<MemTableStep> steps) Add(int key, string value)
+    public List<MemTableStep> Add(int key, string value)
     {
         var steps = new List<MemTableStep> {new(StepKind.InsertStart, $"Begin insert for [{key}]", null, GetLayout())};
 
         AddInternal(key, value, steps);
         
-        return (true, steps);
+        return steps;
     }
     
-    public (bool result, List<MemTableStep> steps) Remove(int key)
+    public List<MemTableStep> Remove(int key)
     {
         List<MemTableStep> steps = [new(StepKind.DeleteStart, $"Begin remove for [{key}]", null, GetLayout())];
 
@@ -44,24 +44,24 @@ public class RedBlackTree : IMemTable
             steps.Add(new MemTableStep(StepKind.DeleteNotFound, $"[{key}] not found", null, GetLayout()));
             steps.Add(new MemTableStep(StepKind.InsertStart, $"Begin insert for [{key}]", null, GetLayout()));
             AddInternal(key, "", steps, true);
-            return (false, steps);
+            return steps;
         }
 
         //already deleted
         if (searchNode.IsTombstone)
         {
             steps.Add(new MemTableStep(StepKind.DeleteAlreadyTombstoned, $"[{key}] already tombstoned", searchNode.Key, GetLayout()));
-            return (true, steps);
+            return steps;
         }
         
         //mark as tombstone
         searchNode.IsTombstone = true;
         searchNode.Value = "";
         steps.Add(new MemTableStep(StepKind.DeleteTombstone, $"Mark [{key}] as tombstone", searchNode.Key, GetLayout()));
-        return (true, steps);
+        return steps;
     }
 
-    public (string? value, List<MemTableStep> steps) Get(int key)
+    public List<MemTableStep> Get(int key)
     {
         List<MemTableStep> steps = [new(StepKind.SearchStart, $"Begin search for [{key}]", null, GetLayout())];
         
@@ -70,17 +70,17 @@ public class RedBlackTree : IMemTable
         if (IsNil(sNode))
         {
             steps.Add(new MemTableStep(StepKind.SearchMiss, $"[{key}] not found", null, GetLayout()));
-            return (null, steps);
+            return steps;
         }
         
         if (!sNode.IsTombstone)
         {
             steps.Add(new MemTableStep(StepKind.SearchHit, $"[{key}] found - value: {sNode.Value}", sNode.Key, GetLayout()));
-            return (sNode.Value, steps);
+            return steps;
         }
 
         steps.Add(new MemTableStep(StepKind.SearchHit, $"[{key}] found as tombstone - value: {sNode.Value}", sNode.Key, GetLayout()));
-        return (null, steps);
+        return steps;
     }
 
     public IEnumerable<Kvp> GetSorted()

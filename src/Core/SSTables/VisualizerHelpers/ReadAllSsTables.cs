@@ -8,7 +8,7 @@ public static class ReadAllSsTables
 {
     public static Dictionary<int, List<SsTable>> ReadAllTables(string directoryPath)
     {
-        var files = Directory.GetFiles(directoryPath).Reverse().ToArray();
+        var files = Directory.GetFiles(directoryPath).OrderByDescending(Path.GetFileName).ToArray();
         var ssTables = new List<SsTable>(capacity: files.Length);
         
         foreach (var file in files)

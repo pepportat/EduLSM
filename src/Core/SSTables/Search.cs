@@ -14,7 +14,7 @@ public static class Search
     /// <param name="directoryPath">Directory paths</param>
     public static IEnumerable<SearchResult> SearchKey(int key, string directoryPath)
     {
-        var filePaths = Directory.GetFiles(directoryPath).Reverse().ToArray();
+        var filePaths = Directory.GetFiles(directoryPath).OrderByDescending(Path.GetFileName).ToArray();
         int numberOfFiles = filePaths.Length;
         var results = new List<SearchResult>();
 

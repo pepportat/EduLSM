@@ -71,7 +71,7 @@ public static class FileReader
     /// <returns>File metadata</returns>
     public static MetaData ReadFooter(BinaryReader reader)
     {
-        reader.BaseStream.Seek( -MetaData.ByteLenght, SeekOrigin.End);
+        reader.BaseStream.Seek( -MetaData.ByteLength, SeekOrigin.End);
 
         return new MetaData {
             DataBlockOffset = reader.ReadInt64(),

@@ -7,7 +7,7 @@ public class MetaData
     /// <summary>
     /// Lenght of Metadata block in the file
     /// </summary>
-    public const int ByteLenght = 32;
+    public const int ByteLength = 32;
     
     /// <summary>
     /// Offset where the DataBlock starts

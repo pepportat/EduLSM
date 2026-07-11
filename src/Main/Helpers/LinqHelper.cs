@@ -4,6 +4,7 @@ public static class LinqHelper
 {
     public static IEnumerable<T> Choose<T>(IEnumerable<T> list, int elementsCount)
     {
-        return list.OrderBy(arg => Guid.NewGuid()).Take(elementsCount);
+        ReadOnlySpan<T> span = list.ToArray();
+        return Random.Shared.GetItems(span, elementsCount);
     }
 }

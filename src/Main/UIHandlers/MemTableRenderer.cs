@@ -53,7 +53,7 @@ public class MemTableRenderer
     private void Search()
     {
         var key = int.Parse(_uiState.Input);
-        var (_, list) = Tree.Get(key);
+        var list = Tree.Get(key);
         Steps = list;
         _ssTableRenderer.SsTablesSearchResults = SearchKey(key, _dataPath).ToList();
     }
@@ -170,7 +170,7 @@ public class MemTableRenderer
                 return;
             }
 
-            var (_, list) = Tree.Remove(int.Parse(_uiState.Input));
+            var list = Tree.Remove(int.Parse(_uiState.Input));
             Steps = list;
             _uiState.CurrentStepIndex = 0;
             UpdateLayout();
@@ -203,7 +203,7 @@ public class MemTableRenderer
 
             var value = Faker.Random.Word();
 
-            var (_, list) = Tree.Add(int.Parse(_uiState.Input), value[..Math.Min(value.Length, 16)]);
+            var list = Tree.Add(int.Parse(_uiState.Input), value[..Math.Min(value.Length, 16)]);
             Steps = list;
             _uiState.CurrentStepIndex = 0;
             UpdateLayout();
