@@ -12,10 +12,11 @@ using static Main.Helpers.StepColorHelper;
 using static Main.Helpers.CameraHelpers;
 using static Raylib_cs.Raylib;
 using static Raylib_cs.Raymath;
+using static Core.SSTables.Search;
 
 namespace Main.UIHandlers;
 
-public partial class LsmEngine
+public class MemTableRenderer
 {
     private Camera2D _treeCamera = new()
     {
@@ -26,17 +27,72 @@ public partial class LsmEngine
     {
         Zoom = 1.0f
     };
-    
-    private RedBlackTree Tree { get; set;}
+
+    private RedBlackTree Tree { get; set; }
     private Dictionary<int, NodeSnapshot> Layout { get; set; }
     private List<MemTableStep> Steps { get; set; }
     private Faker Faker { get; set; }
-    
+    private readonly UIState _uiState;
     private readonly int _maxMemTableCount;
-    
+    private readonly string _dataPath;
+    private readonly SsTableRenderer _ssTableRenderer;
+    public Font Font { get; set; }
+
+    public MemTableRenderer(string dataPath, int maxMemTableCount, UIState uiState, SsTableRenderer ssTableRenderer)
+    {
+        Tree = new RedBlackTree();
+        Layout = Tree.GetLayout();
+        Steps = [];
+        _dataPath = dataPath;
+        _maxMemTableCount = maxMemTableCount;
+        _uiState = uiState;
+        _ssTableRenderer = ssTableRenderer;
+        Faker = new Faker();
+    }
+
+    private void Search()
+    {
+        var key = int.Parse(_uiState.Input);
+        var (_, list) = Tree.Get(key);
+        Steps = list;
+        _ssTableRenderer.SsTablesSearchResults = SearchKey(key, _dataPath).ToList();
+    }
+
+    private void UpdateLayout()
+    {
+        Layout = Tree.GetLayout();
+    }
+
+    private bool InputEnabled()
+    {
+        if (Tree.Count >= _maxMemTableCount)
+        {
+            return false;
+        }
+
+        if (_ssTableRenderer.SsTableTabState == SsTableTabState.Compacting)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryGetCurrentStep(out MemTableStep step)
+    {
+        if (Steps.Count != 0)
+        {
+            step = Steps[_uiState.CurrentStepIndex];
+            return true;
+        }
+
+        step = null!;
+        return false;
+    }
+
     public void DrawMemTable()
     {
-        if (IsMouseButtonDown(MouseButton.Left) && !CheckCollisionPointRec(GetMousePosition(), new Rectangle(0, 0, UIState.LeftPanelWidth, UiState.ScreenHeight)))
+        if (IsMouseButtonDown(MouseButton.Left) && !CheckCollisionPointRec(GetMousePosition(), new Rectangle(0, 0, UIState.LeftPanelWidth, _uiState.ScreenHeight)))
         {
            HandleCameraPan(ref _treeCamera);
         }
@@ -44,10 +100,10 @@ public partial class LsmEngine
         float wheel = GetMouseWheelMove();
         if (wheel != 0)
         {
-            if (CheckCollisionPointRec(GetMousePosition(), new Rectangle(0, 0, UIState.LeftPanelWidth, UiState.ScreenHeight)))
+            if (CheckCollisionPointRec(GetMousePosition(), new Rectangle(0, 0, UIState.LeftPanelWidth, _uiState.ScreenHeight)))
             {
                 _leftPanelCamera.Offset.Y += wheel * 20;
-                _leftPanelCamera.Offset.Y = Clamp(_leftPanelCamera.Offset.Y, -UiState.ScreenHeight, 0);
+                _leftPanelCamera.Offset.Y = Clamp(_leftPanelCamera.Offset.Y, -_uiState.ScreenHeight, 0);
             }
             else
             {
@@ -80,89 +136,89 @@ public partial class LsmEngine
 
         DrawTextEx(Font,
             "LB - Pan | MW - Zoom | Enter - Insert | R - Remove | S - Search | Up/Down - Step selection",
-            new Vector2(UIState.LeftPanelWidth + 10, UiState.ScreenHeight - 28), 18, 2, Color.Gray);
+            new Vector2(UIState.LeftPanelWidth + 10, _uiState.ScreenHeight - 28), 18, 2, Color.Gray);
     }
 
     private void HandleMemTableInput()
     {
         int key = GetKeyPressed();
         char c = (char)key;
-        
+
         // Check if more characters can be added
-        if (c is >= '0' and <= '9' && (UiState.Input.Length < UIState.MaxInputChars))
+        if (c is >= '0' and <= '9' && (_uiState.Input.Length < UIState.MaxInputChars))
         {
-            UiState.Input += c;
+            _uiState.Input += c;
         }
-        
-        if (IsKeyPressed(KeyboardKey.Backspace) && UiState.Input.Length > 0)
+
+        if (IsKeyPressed(KeyboardKey.Backspace) && _uiState.Input.Length > 0)
         {
-            UiState.Input = UiState.Input[..^1];
+            _uiState.Input = _uiState.Input[..^1];
         }
-            
-        if (IsKeyPressed(KeyboardKey.S) && UiState.Input.Length > 0)
+
+        if (IsKeyPressed(KeyboardKey.S) && _uiState.Input.Length > 0)
         {
             Search();
-            UiState.CurrentStepIndex = 0;
-            UiState.Input = "";
+            _uiState.CurrentStepIndex = 0;
+            _uiState.Input = "";
         }
-            
-        if (IsKeyPressed(KeyboardKey.R) && UiState.Input.Length > 0)
+
+        if (IsKeyPressed(KeyboardKey.R) && _uiState.Input.Length > 0)
         {
             if (Tree.Count >= _maxMemTableCount)
             {
-                UiState.Input = "";
+                _uiState.Input = "";
                 return;
             }
-            
-            var (_, list) = Tree.Remove(int.Parse(UiState.Input));
+
+            var (_, list) = Tree.Remove(int.Parse(_uiState.Input));
             Steps = list;
-            UiState.CurrentStepIndex = 0;
+            _uiState.CurrentStepIndex = 0;
             UpdateLayout();
-            UiState.Input = "";
+            _uiState.Input = "";
         }
 
         if (IsKeyPressed(KeyboardKey.Up))
         {
-            if (UiState.CurrentStepIndex > 0)
+            if (_uiState.CurrentStepIndex > 0)
             {
-                UiState.CurrentStepIndex--;
+                _uiState.CurrentStepIndex--;
             }
         }
-            
+
         if (IsKeyPressed(KeyboardKey.Down))
         {
-            if (UiState.CurrentStepIndex < Steps.Count - 1)
+            if (_uiState.CurrentStepIndex < Steps.Count - 1)
             {
-                UiState.CurrentStepIndex++;
+                _uiState.CurrentStepIndex++;
             }
         }
-        
-        if (IsKeyPressed(KeyboardKey.Enter) && UiState.Input.Length > 0)
+
+        if (IsKeyPressed(KeyboardKey.Enter) && _uiState.Input.Length > 0)
         {
             if (!InputEnabled())
             {
-                UiState.Input = "";
+                _uiState.Input = "";
                 return;
             }
 
             var value = Faker.Random.Word();
-            
-            var (_, list) = Tree.Add(int.Parse(UiState.Input), value[..Math.Min(value.Length, 16)]);
+
+            var (_, list) = Tree.Add(int.Parse(_uiState.Input), value[..Math.Min(value.Length, 16)]);
             Steps = list;
-            UiState.CurrentStepIndex = 0;
+            _uiState.CurrentStepIndex = 0;
             UpdateLayout();
-            UiState.Input = "";
+            _uiState.Input = "";
         }
     }
 
     private void DrawLeftPanel(int width, int fontSize = 16, int separatorHeight = 2)
     {
-        BeginScissorMode(0, 0, width, UiState.ScreenHeight * 2);
+        BeginScissorMode(0, 0, width, _uiState.ScreenHeight * 2);
 
-            DrawRectangle(0, 0, width, UiState.ScreenHeight * 2, Color.Black);
-            DrawRectangleLines(0, 0, width, UiState.ScreenHeight * 2, Color.White);
+            DrawRectangle(0, 0, width, _uiState.ScreenHeight * 2, Color.Black);
+            DrawRectangleLines(0, 0, width, _uiState.ScreenHeight * 2, Color.White);
             DrawTextEx(Font, $"Count: {Tree.Count} - Max Count: {_maxMemTableCount}", new Vector2(10, 10), fontSize, 2, Color.White);
-            DrawTextEx(Font, $"Input: {UiState.Input}", new Vector2(10, 10 + separatorHeight + fontSize), fontSize, 2, Color.White);
+            DrawTextEx(Font, $"Input: {_uiState.Input}", new Vector2(10, 10 + separatorHeight + fontSize), fontSize, 2, Color.White);
 
             for (var i = 0; i < Steps.Count; i++)
             {
@@ -171,18 +227,18 @@ public partial class LsmEngine
                 int y = 10 + (i + 2) * (separatorHeight + fontSize);
 
                 DrawTextEx(Font, step.Description, new Vector2(10, y), fontSize, 2,
-                    UiState.CurrentStepIndex == i ? Color.White : Color.Gray);
+                    _uiState.CurrentStepIndex == i ? Color.White : Color.Gray);
             }
 
         EndScissorMode();
-        
-        
+
+
         if (TryGetCurrentStep(out var currentStep))
         {
             if (currentStep is { Key: not null })
             {
-                var layout = currentStep.Layout!.OffsetLayout(UIState.LeftPanelWidth, UiState.ScreenMiddleX);
-                
+                var layout = currentStep.Layout.OffsetLayout(UIState.LeftPanelWidth, _uiState.ScreenMiddleX);
+
                 if (layout.TryGetValue(currentStep.Key.Value, out var nodeCord))
                 {
                     BeginMode2D(_treeCamera);
@@ -199,8 +255,8 @@ public partial class LsmEngine
         if (TryGetCurrentStep(out var currentStep))
         {
             var layout = currentStep.Layout;
-            
-            DrawTreeInternal(layout.OffsetLayout(UIState.LeftPanelWidth, UiState.ScreenMiddleX));
+
+            DrawTreeInternal(layout.OffsetLayout(UIState.LeftPanelWidth, _uiState.ScreenMiddleX));
             return;
         }
 
@@ -261,39 +317,39 @@ public partial class LsmEngine
     private void DrawFlushButton()
     {
         var mouseCursor = Button.DrawActionButton(
-            UiState.ScreenWidth - 100 - 10,
+            _uiState.ScreenWidth - 100 - 10,
             "Flush",
             0,
-            Tree.Count == _maxMemTableCount && CompactionNeededTiers.Count == 0, 
+            Tree.Count == _maxMemTableCount && _ssTableRenderer.CompactionNeededTiers.Count == 0,
             Font,
             () =>
             {
                 var ssTable = Flush.FlushMemTable(Tree.GetSorted(), _dataPath);
-               
-                if (SsTables.TryGetValue(1, out var tier)) {
-                    SsTables[1] = tier.Prepend(ssTable).ToList();
+
+                if (_ssTableRenderer.SsTables.TryGetValue(1, out var tier)) {
+                    _ssTableRenderer.SsTables[1] = tier.Prepend(ssTable).ToList();
                 } else {
-                    SsTables[1] = [ssTable];
+                    _ssTableRenderer.SsTables[1] = [ssTable];
                 }
 
-                CompactionNeededTiers = TierMonitor.NeedsCompaction(_dataPath);
-                
+                _ssTableRenderer.CompactionNeededTiers = TierMonitor.NeedsCompaction(_dataPath);
+
                 Tree.Clear();
                 Layout = Tree.GetLayout();
                 Steps = [];
             }
         );
-        
-        SetCurrentMouseCursor(mouseCursor);
+
+        _uiState.SetCurrentMouseCursor(mouseCursor);
     }
-    
+
     private void AddOnHoverForNodes(NodeSnapshot node, int radius = 20, int fontSize = 10)
     {
         int circleX = (int)node.Position.X;
         int circleY = (int)node.Position.Y;
 
         var mousePos = GetMousePosition();
-        var mouseWorldPos = GetScreenToWorld2D(mousePos, _treeCamera); // Convert mouse to world coords                                                                                                                                       
+        var mouseWorldPos = GetScreenToWorld2D(mousePos, _treeCamera);
         if (CheckCollisionPointRec(mouseWorldPos, new Rectangle(circleX - radius, circleY - radius, radius * 2, radius * 2)))
         {
             DrawCircleLines(circleX, circleY, radius, Color.White);

@@ -22,8 +22,9 @@ class Program
         
         SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint);
         InitWindow(uiState.ScreenWidth, uiState.ScreenHeight, "Edu LSM");
-        engine.Font = LoadFont(Path.Combine(AppContext.BaseDirectory, "resources", "Roboto-Medium.ttf"));
-        SetTextureFilter(engine.Font.Texture, TextureFilter.Bilinear);
+        var font = LoadFont(Path.Combine(AppContext.BaseDirectory, "resources", "Roboto-Medium.ttf"));
+        SetTextureFilter(font.Texture, TextureFilter.Bilinear);
+        engine.InitFont(font);
         
         SetTargetFPS(60);
         
@@ -31,9 +32,8 @@ class Program
         {
             engine.UiState.UpdateScreenHeightAndWidth();
             engine.UiState.SwitchTab();
-            
-            SetMouseCursor(engine.UiState.CurrentMouseCursor);
-            
+            engine.UiState.CurrentMouseCursor = MouseCursor.Default;
+
             BeginDrawing();
                 ClearBackground(new Color(3, 7, 18, 255));
 
@@ -48,8 +48,10 @@ class Program
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-            
+
             EndDrawing();
+
+            SetMouseCursor(engine.UiState.CurrentMouseCursor);
         }
         
         UnloadFont(engine.Font);

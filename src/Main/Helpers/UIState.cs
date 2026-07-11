@@ -29,4 +29,12 @@ public class UIState
             CurrentTab = CurrentTab == UITab.MemTable ? UITab.SSTable : UITab.MemTable;
         }
     }
+    
+    public void SetCurrentMouseCursor(MouseCursor? mouseCursor)
+    {
+        if (mouseCursor is not null)
+        {
+            CurrentMouseCursor = mouseCursor.Value;
+        }
+    }
 }
